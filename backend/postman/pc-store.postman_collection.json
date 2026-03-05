@@ -1,0 +1,103 @@
+﻿{
+  "info": {
+    "name": "PC Store API",
+    "_postman_id": "8a2f7f46-6a22-4ffd-8d1f-8e4cf0ef5e12",
+    "description": "Postman collection for PC Store backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@kahstore.vn\",\n  \"password\": \"Admin@123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/users/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "users", "login"]
+        }
+      }
+    },
+    {
+      "name": "Products - List + Search",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/products?search=rog&page=1&limit=10&sortBy=price&sortOrder=asc",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"],
+          "query": [
+            { "key": "search", "value": "rog" },
+            { "key": "page", "value": "1" },
+            { "key": "limit", "value": "10" },
+            { "key": "sortBy", "value": "price" },
+            { "key": "sortOrder", "value": "asc" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Products - Create (Admin)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryId\": 1,\n  \"name\": \"PC TEST CREATE\",\n  \"price\": 19990000,\n  \"stockQty\": 5,\n  \"imageUrl\": \"/uploads/test.jpg\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        }
+      }
+    },
+    {
+      "name": "Orders - Create (Transaction)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{userToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"shippingAddress\": \"123 Nguyen Trai, Q1, HCM\",\n  \"paymentMethod\": \"cod\",\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 1 },\n    { \"productId\": 6, \"quantity\": 2 }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders"]
+        }
+      }
+    },
+    {
+      "name": "Stats - Overview (Admin)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/stats/overview",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "stats", "overview"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "adminToken", "value": "" },
+    { "key": "userToken", "value": "" }
+  ]
+}

@@ -1,0 +1,377 @@
+﻿.plist-page {
+  background: #efefef;
+  padding: 12px 0 18px;
+}
+
+.plist-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.plist-sidebar,
+.plist-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plist-filter-box,
+.plist-sidebar-banner,
+.plist-main-header,
+.plist-quick-filter-row,
+.plist-grid-box {
+  border: 1px solid #d8cdc0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.plist-filter-box {
+  padding: 10px;
+}
+
+.plist-filter-box h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: #242424;
+  font-weight: 800;
+}
+
+.plist-filter-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plist-filter-option {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: #f7f2eb;
+  color: #47382a;
+  padding: 5px 7px;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+
+.plist-filter-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid #bfa88e;
+  background: #fff;
+  flex: 0 0 10px;
+}
+
+.plist-filter-option.is-active {
+  border-color: #b99774;
+  background: #eadccf;
+}
+
+.plist-filter-option.is-active .plist-filter-indicator {
+  border-color: #9f7f61;
+  background: #9f7f61;
+}
+
+.plist-price-control {
+  display: grid;
+  gap: 5px;
+}
+
+.plist-price-control input[type="range"] {
+  width: 100%;
+  accent-color: #9f7e5f;
+}
+
+.plist-price-input-row {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+.plist-price-input-row span {
+  text-align: center;
+  font-size: 12px;
+  color: #6c5a49;
+  font-weight: 700;
+}
+
+.plist-price-input-row input {
+  width: 100%;
+  border: 1px solid #e0d1c0;
+  border-radius: 6px;
+  background: #faf7f3;
+  padding: 5px 6px;
+  font-size: 10px;
+  color: #3d3228;
+  outline: none;
+}
+
+.plist-filter-action-row {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.plist-filter-action-row button {
+  border: 1px solid #b99878;
+  border-radius: 999px;
+  padding: 5px 7px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.plist-filter-action-row .btn-apply {
+  background: #c4a888;
+  color: #fff;
+}
+
+.plist-filter-action-row .btn-clear {
+  background: #f4eade;
+  color: #5d4630;
+}
+
+.plist-side-label {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1;
+  color: #c2c2c2;
+  font-weight: 500;
+}
+
+.plist-sidebar-banner {
+  overflow: hidden;
+  min-height: 560px;
+  max-height: 620px;
+}
+
+.plist-sidebar-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 50%;
+}
+
+.plist-main-header {
+  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plist-main-header h1 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1;
+  color: #1f1f1f;
+  font-weight: 800;
+}
+
+.plist-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plist-header-actions input {
+  width: 260px;
+  border: 1px solid #decebe;
+  border-radius: 999px;
+  background: #f7f3ee;
+  padding: 7px 12px;
+  font-size: 11px;
+  outline: none;
+}
+
+.plist-header-actions span {
+  border: 1px solid #dcc7b0;
+  border-radius: 999px;
+  background: #f4e9de;
+  color: #5c442d;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.plist-quick-filter-row {
+  padding: 9px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.plist-quick-filter-card {
+  border: 1px solid #e7d9ca;
+  border-radius: 8px;
+  background: #f8f4ef;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.plist-quick-filter-card img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.plist-quick-filter-card p {
+  margin: 0;
+  font-size: 10px;
+  color: #5a452f;
+  font-weight: 800;
+}
+
+.plist-grid-box {
+  padding: 10px;
+}
+
+.plist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.plist-card {
+  border: 1px solid #e1d5c8;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.plist-card-image {
+  border: 1px solid #efe4d8;
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.plist-card-image img {
+  width: 100%;
+  aspect-ratio: 1 / 0.86;
+  object-fit: contain;
+}
+
+.plist-card-type {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1;
+  color: #8d7b69;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.plist-card-name {
+  margin: 0;
+  min-height: 30px;
+  font-size: 10px;
+  line-height: 1.32;
+  color: #1e1e1e;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.plist-card-price {
+  margin: 1px 0 0;
+  font-size: 12px;
+  line-height: 1;
+  color: #111;
+  font-weight: 900;
+}
+
+.plist-card-button {
+  margin-top: 3px;
+  border: 1px solid #b89a7c;
+  border-radius: 999px;
+  background: #c4a888;
+  color: #fff;
+  padding: 5px 8px;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+  text-align: center;
+}
+
+.plist-empty {
+  margin-top: 10px;
+  border: 1px dashed #d8c4ac;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #686868;
+}
+
+.plist-pagination {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.plist-pagination button {
+  border: 1px solid #c7ae95;
+  border-radius: 999px;
+  background: #f4ebdf;
+  color: #62482f;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.plist-pagination button.is-active {
+  background: #b99773;
+  color: #fff;
+}
+
+.plist-pagination button:disabled {
+  opacity: 0.5;
+}
+
+@media (max-width: 1020px) {
+  .plist-shell {
+    width: calc(100% - 16px);
+    grid-template-columns: 1fr;
+  }
+
+  .plist-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .plist-main-header,
+  .plist-header-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .plist-header-actions input {
+    width: 100%;
+  }
+
+  .plist-quick-filter-row,
+  .plist-grid {
+    grid-template-columns: 1fr;
+  }
+}

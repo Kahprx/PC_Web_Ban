@@ -1,0 +1,41 @@
+﻿services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pc_store_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pc_store
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./backend/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./backend/sql/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+
+  backend:
+    build:
+      context: ./backend
+    container_name: pc_store_backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file:
+      - ./backend/.env.example
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pc_store
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/pc_store
+      PORT: 4000
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+volumes:
+  pg_data:

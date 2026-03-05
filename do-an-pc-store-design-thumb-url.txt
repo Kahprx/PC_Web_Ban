@@ -1,0 +1,3 @@
+https://s3-alpha.figma.com/thumbnails/0214a91f-a1e1-49ae-ac4c-2cdc94b3914a?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=REDACTED&X-Amz-Date=20260215T120000Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=REDACTED
+
+
