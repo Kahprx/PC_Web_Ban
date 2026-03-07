@@ -7,7 +7,6 @@ import {
 } from "../../services/productService";
 import { useAuth } from "../../context/AuthContext";
 
-import iconAdd from "../../assets/images/PC/ICON/add (1).png";
 import iconCategory from "../../assets/images/PC/ICON/category.png";
 import iconSearch from "../../assets/images/PC/ICON/search.png";
 import iconEdit from "../../assets/images/PC/ICON/edit.png";
@@ -56,6 +55,20 @@ export default function ProductManager() {
     return statusFilter;
   }, [statusFilter]);
 
+  const productStats = useMemo(() => {
+    const total = products.length;
+    const outOfStock = products.filter((item) => Number(item.stock_qty) <= 0).length;
+    const hidden = products.filter((item) => String(item.status || "").toLowerCase() === "inactive").length;
+    const active = total - outOfStock - hidden;
+
+    return {
+      total,
+      active: Math.max(active, 0),
+      hidden,
+      outOfStock,
+    };
+  }, [products]);
+
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -103,17 +116,60 @@ export default function ProductManager() {
   };
 
   return (
-    <div className="admin-product-page">
-      <div className="admin-product-header">
-        <h1>Quản Lý Sản Phẩm</h1>
+    <div className="admin-page admin-product-page">
+      <section className="admin-hero">
+        <div className="admin-hero-header">
+          <div>
+            <p className="admin-kicker">Catalog control</p>
+            <h1>Quản lý sản phẩm</h1>
+            <p>
+              Màn này đã được kéo về cùng hệ UI admin mới: có hero, overview cards và
+              khu CRUD rõ ràng hơn thay vì chỉ còn bảng trần.
+            </p>
+          </div>
 
-        <Link to="/admin/products/create" className="admin-create-button">
-          <span>THÊM SẢN PHẨM</span>
-          <img src={iconAdd} alt="Thêm" />
-        </Link>
-      </div>
+          <div className="admin-hero-actions">
+            <Link to="/admin/products/create" className="admin-link-button">
+              Thêm sản phẩm
+            </Link>
+            <button type="button" className="admin-link-button-outline" onClick={loadProducts}>
+              Làm mới danh sách
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="admin-overview-grid">
+        <article className="admin-overview-card">
+          <p>Tổng SKU</p>
+          <strong>{productStats.total}</strong>
+          <span>Số sản phẩm đang có trong danh sách frontend admin.</span>
+        </article>
+        <article className="admin-overview-card">
+          <p>Đang bán</p>
+          <strong>{productStats.active}</strong>
+          <span>Ưu tiên các SKU còn hàng và đang active trên hệ thống.</span>
+        </article>
+        <article className="admin-overview-card">
+          <p>Tạm ẩn</p>
+          <strong>{productStats.hidden}</strong>
+          <span>Các mục đang inactive hoặc chưa sẵn sàng đưa ra storefront.</span>
+        </article>
+        <article className="admin-overview-card">
+          <p>Hết hàng</p>
+          <strong>{productStats.outOfStock}</strong>
+          <span>SKU cần nhập lại hoặc chuyển trạng thái hiển thị.</span>
+        </article>
+      </section>
 
       <section className="admin-product-panel">
+        <div className="admin-surface-head">
+          <div>
+            <h2>Bộ lọc và bảng sản phẩm</h2>
+            <p>Tìm kiếm, lọc trạng thái và thực hiện CRUD trực tiếp trên bảng.</p>
+          </div>
+        </div>
+
         <div className="admin-product-filters">
           <label className="admin-product-search" aria-label="Tìm kiếm sản phẩm">
             <img src={iconSearch} alt="Search" />
@@ -219,7 +275,12 @@ export default function ProductManager() {
       </section>
 
       <section className="admin-product-panel">
-        <h2 className="admin-subtitle">THÔNG TIN KHÁCH HÀNG GẦN ĐÂY</h2>
+        <div className="admin-surface-head">
+          <div>
+            <h2>Thông tin khách hàng gần đây</h2>
+            <p>Khối phụ để tham chiếu nhanh đơn đang phát sinh quanh catalog.</p>
+          </div>
+        </div>
 
         <div className="admin-product-table-wrap">
           <table className="admin-product-table admin-customer-table">

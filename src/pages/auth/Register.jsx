@@ -1,7 +1,13 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "./Auth.css";
+
+const registerBenefits = [
+  "Luu profile va dia chi giao hang de checkout nhanh hon.",
+  "Theo doi lich su don, trang thai xu ly va thong tin bao hanh.",
+  "San sang de noi tiep voi backend khi project chuyen sang du lieu that.",
+];
 
 export default function Register() {
   const navigate = useNavigate();
@@ -17,7 +23,7 @@ export default function Register() {
     event.preventDefault();
 
     if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Vui lòng nhập đầy đủ thông tin.");
+      setError("Vui long nhap day du thong tin.");
       return;
     }
 
@@ -31,7 +37,7 @@ export default function Register() {
       });
       navigate("/profile", { replace: true });
     } catch (err) {
-      setError(err?.message || "Đăng ký thất bại.");
+      setError(err?.message || "Dang ky that bai.");
     } finally {
       setLoading(false);
     }
@@ -39,55 +45,96 @@ export default function Register() {
 
   return (
     <div className="auth-page">
-      <div className="auth-card">
-        <h1>Tạo tài khoản mới</h1>
-        <p>Đăng ký tài khoản để lưu địa chỉ, xem lịch sử mua hàng và nhận khuyến mãi.</p>
+      <div className="auth-shell">
+        <article className="auth-showcase">
+          <p className="auth-kicker">New account</p>
+          <h1>Tao tai khoan de bien shopping flow thanh mot hanh trinh co luu vet.</h1>
+          <p className="auth-lead">
+            Batch nay khong chi them mau sac. Toi dang bien nhom auth thanh cac man
+            co thong diep, quyen loi va hierarchy ro rang hon.
+          </p>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <div className="auth-field">
-            <label htmlFor="register-name">Họ và tên</label>
-            <input
-              id="register-name"
-              type="text"
-              placeholder="Nguyễn Văn A"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
+          <div className="auth-feature-list">
+            {registerBenefits.map((item) => (
+              <article key={item} className="auth-feature-card">
+                <strong>Benefit</strong>
+                <p>{item}</p>
+              </article>
+            ))}
           </div>
 
-          <div className="auth-field">
-            <label htmlFor="register-email">Email</label>
-            <input
-              id="register-email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
+          <div className="auth-credential-card auth-credential-card-wide">
+            <p>Luu y</p>
+            <strong>Password toi thieu 6 ky tu</strong>
+            <span>Neu backend khong san sang, app van co the tao local account de demo FE.</span>
           </div>
 
-          <div className="auth-field">
-            <label htmlFor="register-password">Mật khẩu</label>
-            <input
-              id="register-password"
-              type="password"
-              placeholder="Tối thiểu 6 ký tự"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
+          <div className="auth-link-row">
+            <Link to="/login" className="auth-secondary-link">
+              Da co tai khoan? Dang nhap
+            </Link>
+          </div>
+        </article>
+
+        <section className="auth-card">
+          <div className="auth-card-top">
+            <p className="auth-kicker">Register</p>
+            <h2>Tao tai khoan moi</h2>
+            <p>Nhap thong tin co ban de khoi tao profile user trong he thong.</p>
           </div>
 
-          {error && <div className="auth-note">{error}</div>}
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <div className="auth-field">
+              <label htmlFor="register-name">Ho va ten</label>
+              <input
+                id="register-name"
+                type="text"
+                placeholder="Nguyen Van A"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </div>
 
-          <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? "ĐANG TẠO..." : "TẠO TÀI KHOẢN"}
-          </button>
-        </form>
+            <div className="auth-field">
+              <label htmlFor="register-email">Email</label>
+              <input
+                id="register-email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
 
-        <div className="auth-alt">
-          <span>Đã có tài khoản?</span>
-          <Link to="/login">Đăng nhập</Link>
-        </div>
+            <div className="auth-field">
+              <label htmlFor="register-password">Mat khau</label>
+              <input
+                id="register-password"
+                type="password"
+                placeholder="Toi thieu 6 ky tu"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
+
+            {error && (
+              <div className="auth-note is-error" aria-live="polite">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? "DANG TAO..." : "TAO TAI KHOAN"}
+            </button>
+          </form>
+
+          <div className="auth-divider" />
+
+          <div className="auth-alt">
+            <span>Dang co san profile va order pages cho role user.</span>
+            <Link to="/login">Dang nhap</Link>
+          </div>
+        </section>
       </div>
     </div>
   );

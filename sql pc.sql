@@ -53,3 +53,37 @@ CREATE TABLE order_items (
     CONSTRAINT fk_product FOREIGN KEY (product_id)
         REFERENCES products(id)
 );
+CREATE TABLE cart_items(
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT,
+product_id INT,
+quantity INT
+);
+
+CREATE TABLE reviews(
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT,
+product_id INT,
+rating INT,
+comment TEXT
+);
+
+CREATE TABLE wishlist(
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT,
+product_id INT
+);
+
+CREATE TABLE comments(
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT,
+product_id INT,
+content TEXT
+);
+
+CREATE TABLE payments(
+id INT AUTO_INCREMENT PRIMARY KEY,
+order_id INT,
+method VARCHAR(50),
+status VARCHAR(50)
+);

@@ -34,6 +34,32 @@ export default function ProductForm() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
+  const formStats = useMemo(
+    () => [
+      {
+        label: "Che do",
+        value: isEditMode ? "Edit" : "Create",
+        note: isEditMode ? "Dang cap nhat SKU ton tai." : "Dang tao SKU moi cho catalog.",
+      },
+      {
+        label: "Danh muc",
+        value: categories.length,
+        note: "So danh muc backend dang co san de map san pham.",
+      },
+      {
+        label: "Upload",
+        value: uploading ? "Dang xu ly" : "San sang",
+        note: "Anh co the upload len backend hoac nhap URL truc tiep.",
+      },
+      {
+        label: "Quyen CRUD",
+        value: token ? "Admin auth" : "Can dang nhap",
+        note: "Form nay yeu cau token backend de luu thay doi that.",
+      },
+    ],
+    [categories.length, isEditMode, token, uploading]
+  );
+
   useEffect(() => {
     const loadBase = async () => {
       try {
@@ -161,8 +187,42 @@ export default function ProductForm() {
 
   return (
     <div className="admin-page">
+      <section className="admin-hero">
+        <div className="admin-hero-header">
+          <div>
+            <p className="admin-kicker">Product editor</p>
+            <h1>{isEditMode ? `Cap nhat san pham #${id}` : "Tao san pham moi"}</h1>
+            <p>
+              Toi giu nguyen luong CRUD backend, nhung dua man form nay ve cung he
+              giao dien admin moi de no khong bi tach khoi dashboard va order manager.
+            </p>
+          </div>
+
+          <div className="admin-hero-actions">
+            <button
+              type="button"
+              className="admin-link-button-outline"
+              onClick={() => navigate("/admin/products")}
+            >
+              Ve danh sach san pham
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="admin-overview-grid">
+        {formStats.map((item) => (
+          <article key={item.label} className="admin-overview-card">
+            <p>{item.label}</p>
+            <strong>{item.value}</strong>
+            <span>{item.note}</span>
+          </article>
+        ))}
+      </section>
+
       <section className="admin-form">
         <h2>{isEditMode ? `Cập nhật sản phẩm #${id}` : "Tạo sản phẩm mới"}</h2>
+        <p>Nhap thong tin co ban, map danh muc va preview anh truoc khi luu.</p>
 
         <form className="admin-form-grid" onSubmit={handleSubmit}>
           <div className="admin-form-field">

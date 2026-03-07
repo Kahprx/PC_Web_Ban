@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "pc-store-backend",
   "version": "1.0.0",
   "description": "Backend API for PC Store",
@@ -19,6 +19,6 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.14"
   }
 }

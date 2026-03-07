@@ -198,8 +198,44 @@ export default function UserManager() {
 
   return (
     <div className="admin-page">
+      <section className="admin-hero">
+        <div className="admin-hero-header">
+          <div>
+            <p className="admin-kicker">Local account manager</p>
+            <h1>Quan ly nguoi dung</h1>
+            <p>
+              Trang nay van dang quan ly local demo account, nhung giao dien da duoc
+              nang cap de thong ke, tao moi va doi role/trang thai ro rang hon.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="admin-overview-grid">
+        <article className="admin-overview-card">
+          <p>Tong tai khoan</p>
+          <strong>{userStats.total}</strong>
+          <span>Tong so user local dang ton tai trong workspace demo.</span>
+        </article>
+        <article className="admin-overview-card">
+          <p>User role</p>
+          <strong>{userStats.userCount}</strong>
+          <span>Nhom tai khoan storefront thong thuong.</span>
+        </article>
+        <article className="admin-overview-card">
+          <p>Admin role</p>
+          <strong>{userStats.adminCount}</strong>
+          <span>Nhom tai khoan co the vao admin layout.</span>
+        </article>
+        <article className="admin-overview-card">
+          <p>Dang hoat dong</p>
+          <strong>{userStats.activeCount}</strong>
+          <span>So tai khoan duoc danh dau active trong local storage.</span>
+        </article>
+      </section>
+
       <section className="admin-panel">
-        <h1>Quan ly nguoi dung</h1>
+        <h1>Quan ly nguoi dung local</h1>
         <p>Them tai khoan moi truc tiep tu trang admin va phan quyen user/admin.</p>
       </section>
 
