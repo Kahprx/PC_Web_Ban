@@ -1,43 +1,92 @@
-const db = require("../models/db");
+const asyncHandler = require('../utils/asyncHandler');
+const httpError = require('../utils/httpError');
+const commentModel = require('../models/commentModel');
 
-exports.getComments = async (req, res) => {
-  const productId = req.params.productId;
+/**
+ * GET /api/comments/:productId
+ * Lấy danh sách bình luận của một sản phẩm
+ */
+const getComments = asyncHandler(async (req, res) => {
+  const productId = Number(req.params.productId);
+  if (!Number.isFinite(productId)) {
+    throw httpError(400, 'productId không hợp lệ');
+  }
 
-  const [rows] = await db.query(
-    "SELECT * FROM comments WHERE product_id=?",
-    [productId]
-  );
+  const comments = await commentModel.getCommentsByProduct(productId);
+  res.status(200).json({ data: comments });
+});
 
-  res.json(rows);
-};
-
-exports.createComment = async (req, res) => {
-  const { product_id, content } = req.body;
+/**
+ * POST /api/comments
+ * Tạo bình luận mới
+ */
+const createComment = asyncHandler(async (req, res) => {
   const userId = req.user.id;
+  const { productId, content } = req.body || {};
 
-  await db.query(
-    "INSERT INTO comments (user_id,product_id,content) VALUES (?,?,?)",
-    [userId, product_id, content]
-  );
+  if (!productId || !content) {
+    throw httpError(400, 'productId và content là bắt buộc');
+  }
 
-  res.json({ message: "Comment added" });
-};
+  const comment = await commentModel.createComment(userId, Number(productId), String(content));
 
-exports.updateComment = async (req, res) => {
-  const { content } = req.body;
+  res.status(201).json({
+    message: 'Tạo bình luận thành công',
+    data: comment,
+  });
+});
 
-  await db.query(
-    "UPDATE comments SET content=? WHERE id=?",
-    [content, req.params.id]
-  );
+/**
+ * PUT /api/comments/:id
+ * Cập nhật bình luận (chỉ chính chủ)
+ */
+const updateComment = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const commentId = Number(req.params.id);
+  const { content } = req.body || {};
 
-  res.json({ message: "Comment updated" });
-};
+  if (!Number.isFinite(commentId)) {
+    throw httpError(400, 'ID không hợp lệ');
+  }
 
-exports.deleteComment = async (req, res) => {
-  await db.query("DELETE FROM comments WHERE id=?", [
-    req.params.id
-  ]);
+  if (!content) {
+    throw httpError(400, 'content là bắt buộc');
+  }
 
-  res.json({ message: "Comment deleted" });
+  const updated = await commentModel.updateComment(commentId, userId, String(content));
+  if (!updated) {
+    throw httpError(404, 'Không tìm thấy bình luận');
+  }
+
+  res.status(200).json({
+    message: 'Cập nhật bình luận thành công',
+    data: updated,
+  });
+});
+
+/**
+ * DELETE /api/comments/:id
+ * Xóa bình luận (chỉ chính chủ)
+ */
+const deleteComment = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const commentId = Number(req.params.id);
+
+  if (!Number.isFinite(commentId)) {
+    throw httpError(400, 'ID không hợp lệ');
+  }
+
+  const removed = await commentModel.deleteComment(commentId, userId);
+  if (!removed) {
+    throw httpError(404, 'Không tìm thấy bình luận');
+  }
+
+  res.status(200).json({ message: 'Xóa bình luận thành công' });
+});
+
+module.exports = {
+  getComments,
+  createComment,
+  updateComment,
+  deleteComment,
 };

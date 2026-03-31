@@ -1,4 +1,5 @@
-﻿import { Link } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   formatCurrency,
   homeCollectionSections,
@@ -31,11 +32,63 @@ const detailTitleById = {
 const toTagLabel = (tag) => String(tag || "").replace(/\s+/g, " ").trim().toUpperCase();
 
 export default function Home() {
+  const pageRef = useRef(null);
+
+  useEffect(() => {
+    const root = pageRef.current;
+    if (!root) return undefined;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealElements = Array.from(root.querySelectorAll("[data-reveal]"));
+
+    if (prefersReducedMotion) {
+      revealElements.forEach((element) => element.classList.add("is-visible"));
+      return undefined;
+    }
+
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.2, rootMargin: "0px 0px -8% 0px" }
+    );
+
+    revealElements.forEach((element) => revealObserver.observe(element));
+
+    let rafId = 0;
+    const updateParallax = () => {
+      const progress = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 0.9)));
+      root.style.setProperty("--home-scroll-progress", progress.toFixed(3));
+      rafId = 0;
+    };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(updateParallax);
+    };
+
+    updateParallax();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      revealObserver.disconnect();
+      window.removeEventListener("scroll", onScroll);
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
+
   return (
-    <div className="home-page">
+    <div className="home-page" ref={pageRef}>
       <div className="home-shell">
-        <section className="home-hero-grid">
-          <article className="home-hero-main-card home-hero-main-card-service">
+        <section className="home-hero-grid home-reveal is-visible" data-reveal>
+          <article className="home-hero-main-card home-hero-main-card-service home-parallax-layer">
             {homeHeroBanners.main && <img src={homeHeroBanners.main} alt="Main hero" />}
 
             <div className="home-hero-main-content">
@@ -54,7 +107,7 @@ export default function Home() {
             </div>
           </article>
 
-          <article className="home-hero-side-card home-hero-side-card-offer">
+          <article className="home-hero-side-card home-hero-side-card-offer home-parallax-layer">
             {homeHeroBanners.rightTop && <img src={homeHeroBanners.rightTop} alt="Ưu đãi" />}
             <div className="home-hero-side-label home-hero-side-label-offer">
               <strong>ƯU ĐÃI LINH KIỆN</strong>
@@ -62,13 +115,13 @@ export default function Home() {
             </div>
           </article>
 
-          <article className="home-hero-side-card home-hero-side-card-build">
+          <article className="home-hero-side-card home-hero-side-card-build home-parallax-layer">
             {homeHeroBanners.rightBottom && <img src={homeHeroBanners.rightBottom} alt="Build" />}
             <div className="home-hero-side-label home-hero-side-label-build">BUILD PC GAMING</div>
           </article>
         </section>
 
-        <section className="home-chip-row">
+        <section className="home-chip-row home-reveal is-visible" data-reveal>
           {categoryChips.map((chip) => (
             <Link key={chip} to="/products" className="home-chip-item">
               {chip}
@@ -76,7 +129,7 @@ export default function Home() {
           ))}
         </section>
 
-        <section className="home-highlight">
+        <section className="home-highlight home-reveal" data-reveal>
           <header className="home-highlight-head">
             <div>
               <p>
@@ -95,6 +148,7 @@ export default function Home() {
                   key={`${card.title}-${index}`}
                   to={card?.href || "/products"}
                   className="home-highlight-card"
+                  style={{ "--stagger": index }}
                 >
                   <div className="home-highlight-image-wrap">
                     <img src={card?.image} alt={card.title} />
@@ -108,20 +162,25 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="home-detail">
+        <section className="home-detail home-reveal" data-reveal>
           <p className="home-detail-label">detail</p>
 
           <div className="home-detail-banner-row">
             {homePromoBanners.slice(0, 2).map((banner, index) => (
-              <Link key={`promo-${index}`} to="/build-pc" className="home-detail-banner">
+              <Link
+                key={`promo-${index}`}
+                to="/build-pc"
+                className="home-detail-banner"
+                style={{ "--stagger": index + 1 }}
+              >
                 <img src={banner} alt={`Khuyến mãi ${index + 1}`} />
               </Link>
             ))}
           </div>
 
           <div className="home-detail-sections">
-            {homeCollectionSections.map((section) => (
-              <article key={section.id} className="home-detail-strip">
+            {homeCollectionSections.map((section, sectionIndex) => (
+              <article key={section.id} className="home-detail-strip" style={{ "--stagger": sectionIndex + 1 }}>
                 <header className="home-detail-strip-head">
                   <h3>{detailTitleById[section.id] || section.title}</h3>
 
@@ -138,8 +197,13 @@ export default function Home() {
                   </button>
 
                   <div className="home-detail-strip-grid">
-                    {section.items.slice(0, 8).map((item) => (
-                      <Link key={item.id} to={item.href || "/products"} className="home-detail-item-card">
+                    {section.items.slice(0, 8).map((item, itemIndex) => (
+                      <Link
+                        key={item.id}
+                        to={item.href || "/products"}
+                        className="home-detail-item-card"
+                        style={{ "--stagger": itemIndex + 1 }}
+                      >
                         <div className="home-detail-item-image-wrap">
                           <img src={item.image} alt={item.name} />
                         </div>

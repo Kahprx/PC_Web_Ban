@@ -1,6 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "../../components/common/ProductCard";
+import { useAuth } from "../../context/AuthContext";
+import { addToCartApi } from "../../services/cartService";
+import { fetchProductById, toAbsoluteImageUrl } from "../../services/productService";
+import { fetchProductRating } from "../../services/reviewService";
 import {
   articleCards,
   comboItems,
@@ -14,17 +18,135 @@ import "./ProductDetail.css";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const product = getProductById(id);
+  const { token } = useAuth();
 
+  const [product, setProduct] = useState(null);
   const [activeImage, setActiveImage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
+  const [rating, setRating] = useState({ avgRating: 0, totalReviews: 0 });
+
+  const normalizeProduct = (data) => {
+    if (!data) return null;
+    const baseImage = data.image_url || data.image || "";
+    const normalizedImage = baseImage ? toAbsoluteImageUrl(baseImage) : "";
+    const gallery = Array.isArray(data.gallery) && data.gallery.length > 0
+      ? data.gallery.map((img) => toAbsoluteImageUrl(img))
+      : normalizedImage
+      ? [normalizedImage]
+      : [];
+
+    return {
+      id: data.id,
+      name: data.name,
+      price: Number(data.price ?? 0),
+      oldPrice: Number(data.price ?? 0) * 1.1,
+      brand: data.brand || data.category_name || "PC STORE",
+      type: data.category_name || "PC",
+      description: data.description,
+      image: normalizedImage,
+      gallery,
+      specs: {
+        cpu: data.cpu || data.specs?.cpu || "CPU dang cap nhat",
+        mainboard: data.mainboard || data.specs?.mainboard || "Mainboard dang cap nhat",
+        ram: data.ram || data.specs?.ram || "RAM dang cap nhat",
+        vga: data.vga || data.specs?.vga || "VGA dang cap nhat",
+        ssd: data.ssd || data.specs?.ssd || "SSD dang cap nhat",
+        hdd: data.hdd || data.specs?.hdd || "HDD dang cap nhat",
+        psu: data.psu || data.specs?.psu || "PSU dang cap nhat",
+        case: data.case || data.specs?.case || "CASE dang cap nhat",
+        cooler: data.cooler || data.specs?.cooler || "COOLER dang cap nhat",
+      },
+    };
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProduct = async () => {
+      setLoading(true);
+      setInfo("");
+      try {
+        const apiData = await fetchProductById(id);
+        if (!mounted) return;
+        const normalized = normalizeProduct(apiData?.data || apiData);
+        setProduct(normalized);
+        setError("");
+      } catch (err) {
+        const fallback = getProductById(id);
+        if (mounted) {
+          setProduct(fallback);
+          setError(err?.message ? `Fallback demo: ${err.message}` : "Dang dung du lieu demo");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const loadRating = async () => {
+      try {
+        const r = await fetchProductRating(id);
+        if (!mounted || !r) return;
+        setRating({
+          avgRating: Number(r.avgRating ?? r.avg_rating ?? 0),
+          totalReviews: Number(r.totalReviews ?? r.total_reviews ?? 0),
+        });
+      } catch {
+        // ignore rating errors
+      }
+    };
+
+    loadProduct();
+    loadRating();
+
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
   const safeDefaultImage = product?.gallery?.[0] ?? product?.image ?? "";
   const displayImage = product?.gallery?.includes(activeImage) ? activeImage : safeDefaultImage;
 
-  const relatedProducts = useMemo(() => getRelatedProducts(id, 8), [id]);
+  const relatedProducts = useMemo(
+    () => getRelatedProducts(product?.id ?? id, 8),
+    [product?.id, id]
+  );
+
   const viewedProducts = useMemo(() => {
     const currentId = product?.id ?? -1;
     return products.filter((item) => item.id !== currentId).slice(0, 6);
   }, [product]);
+
+  const handleAddToCart = async () => {
+    if (!product?.id) return;
+    if (!token) {
+      setError("Vui long dang nhap de them gio hang.");
+      return;
+    }
+
+    setInfo("");
+    setError("");
+
+    try {
+      await addToCartApi({ productId: product.id, quantity: 1 }, token);
+      setInfo("Da them vao gio hang (API).");
+    } catch (err) {
+      setError(err?.message || "Them gio hang that bai.");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="pd-page">
+        <div className="pd-shell">
+          <div className="pd-empty">Dang tai du lieu san pham...</div>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -64,7 +186,7 @@ export default function ProductDetail() {
             </div>
 
             <div className="pd-thumb-row">
-              {product.gallery.slice(0, 6).map((image) => (
+              {(product.gallery || []).slice(0, 6).map((image) => (
                 <button
                   key={image}
                   type="button"
@@ -84,7 +206,7 @@ export default function ProductDetail() {
           <article className="pd-summary-box">
             <h1>{product.name}</h1>
             <p className="pd-meta">
-              Ma SP: PC-{String(product.id + 1).padStart(4, "0")} | Thuong hieu: {product.brand}
+              Ma SP: PC-{String(Number(product.id ?? 0) + 1).padStart(4, "0")} | Thuong hieu: {product.brand}
             </p>
 
             <div className="pd-price-row">
@@ -93,16 +215,19 @@ export default function ProductDetail() {
             </div>
 
             <div className="pd-action-row">
-              <button type="button" className="primary">
+              <button type="button" className="primary" onClick={handleAddToCart}>
                 Mua ngay
               </button>
               <button type="button">Tra gop 0%</button>
               <button type="button">Tu van build</button>
             </div>
 
-            <button type="button" className="pd-cart-btn">
+            <button type="button" className="pd-cart-btn" onClick={handleAddToCart}>
               Them vao gio hang
             </button>
+
+            {info && <p className="pd-meta" style={{ color: "#1f7a1f", marginTop: "6px" }}>{info}</p>}
+            {error && <p className="pd-meta" style={{ color: "#d14343", marginTop: "6px" }}>{error}</p>}
 
             <section className="pd-promo-box">
               <h3>Khuyen mai</h3>
@@ -192,8 +317,10 @@ export default function ProductDetail() {
 
           <article className="pd-review-box">
             <h2>Binh luan va danh gia</h2>
-            <p className="pd-score">5/5</p>
-            <p className="pd-score-note">1 danh gia duoc xac thuc</p>
+            <p className="pd-score">
+              {rating.avgRating.toFixed(1)}/5
+            </p>
+            <p className="pd-score-note">{rating.totalReviews} danh gia tu API</p>
             <button type="button">Danh gia ngay</button>
           </article>
         </section>

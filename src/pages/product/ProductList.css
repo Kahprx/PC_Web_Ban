@@ -1,6 +1,20 @@
-﻿.plist-page {
+.plist-page {
   background: #efefef;
   padding: 12px 0 18px;
+  animation: fade-in 0.45s ease both;
+}
+
+.plist-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s var(--ease-smooth),
+    transform 0.7s var(--ease-smooth);
+}
+
+.plist-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .plist-shell {
@@ -26,6 +40,23 @@
   border: 1px solid #d8cdc0;
   border-radius: 10px;
   background: #fff;
+  transition:
+    box-shadow 0.24s ease,
+    transform 0.24s var(--ease-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.plist-filter-box::after,
+.plist-main-header::after,
+.plist-grid-box::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 28%, rgba(255, 255, 255, 0.28) 48%, transparent 64%);
+  transform: translateX(-140%) skewX(-18deg);
+  opacity: 0;
 }
 
 .plist-filter-box {
@@ -58,6 +89,10 @@
   align-items: center;
   gap: 6px;
   text-align: left;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s var(--ease-smooth);
 }
 
 .plist-filter-indicator {
@@ -113,6 +148,9 @@
   font-size: 10px;
   color: #3d3228;
   outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .plist-filter-action-row {
@@ -128,6 +166,10 @@
   padding: 5px 7px;
   font-size: 10px;
   font-weight: 700;
+  transition:
+    transform 0.2s var(--ease-smooth),
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .plist-filter-action-row .btn-apply {
@@ -191,6 +233,9 @@
   padding: 7px 12px;
   font-size: 11px;
   outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .plist-header-actions span {
@@ -220,6 +265,12 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  transition:
+    transform 0.24s var(--ease-smooth),
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
+  animation: fade-slide-up 0.5s var(--ease-smooth) both;
+  animation-delay: calc(var(--stagger, 0) * 75ms + 90ms);
 }
 
 .plist-quick-filter-card img {
@@ -254,6 +305,12 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
+  transition:
+    transform 0.26s var(--ease-smooth),
+    box-shadow 0.26s ease,
+    border-color 0.22s ease;
+  animation: fade-slide-up 0.45s var(--ease-smooth) both;
+  animation-delay: calc(var(--stagger, 0) * 45ms + 90ms);
 }
 
 .plist-card-image {
@@ -261,12 +318,16 @@
   border-radius: 8px;
   background: #fff;
   overflow: hidden;
+  transition: box-shadow 0.24s ease;
 }
 
 .plist-card-image img {
   width: 100%;
   aspect-ratio: 1 / 0.86;
   object-fit: contain;
+  transition: transform 0.32s var(--ease-smooth);
+  animation: clip-reveal-y 0.7s var(--ease-smooth) both;
+  animation-delay: calc(var(--stagger, 0) * 48ms + 120ms);
 }
 
 .plist-card-type {
@@ -307,6 +368,21 @@
   line-height: 1;
   font-weight: 800;
   text-align: center;
+  transition:
+    transform 0.2s var(--ease-smooth),
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.plist-card-button::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(112deg, transparent 34%, rgba(255, 255, 255, 0.62) 50%, transparent 68%);
+  transform: translateX(-140%) skewX(-18deg);
+  opacity: 0;
 }
 
 .plist-empty {
@@ -337,6 +413,9 @@
   padding: 0;
   font-size: 10px;
   font-weight: 700;
+  transition:
+    transform 0.18s var(--ease-smooth),
+    background-color 0.18s ease;
 }
 
 .plist-pagination button.is-active {
@@ -346,6 +425,62 @@
 
 .plist-pagination button:disabled {
   opacity: 0.5;
+}
+
+.plist-price-input-row input:focus,
+.plist-header-actions input:focus {
+  border-color: #b99b7d;
+  box-shadow: 0 0 0 3px rgba(185, 155, 125, 0.18);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .plist-filter-box:hover::after,
+  .plist-main-header:hover::after,
+  .plist-grid-box:hover::after,
+  .plist-card-button:hover::after {
+    animation: sheen-sweep 0.72s var(--ease-smooth) both;
+  }
+
+  .plist-filter-option:hover {
+    transform: translateX(2px);
+  }
+
+  .plist-filter-action-row button:hover,
+  .plist-card-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 14px rgba(96, 68, 42, 0.16);
+  }
+
+  .plist-sidebar-banner:hover,
+  .plist-main-header:hover,
+  .plist-quick-filter-row:hover,
+  .plist-grid-box:hover {
+    box-shadow: 0 10px 18px rgba(95, 68, 43, 0.1);
+  }
+
+  .plist-quick-filter-card:hover {
+    border-color: #d7c0a7;
+    transform: translateY(-2px);
+    box-shadow: 0 9px 16px rgba(95, 69, 45, 0.12);
+  }
+
+  .plist-card:hover {
+    transform: translateY(-4px);
+    border-color: #d2b89d;
+    box-shadow: 0 12px 20px rgba(88, 61, 36, 0.14);
+  }
+
+  .plist-card:hover .plist-card-image {
+    box-shadow: 0 10px 16px rgba(94, 68, 44, 0.14);
+  }
+
+  .plist-card:hover .plist-card-image img {
+    transform: scale(1.05);
+  }
+
+  .plist-pagination button:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
 }
 
 @media (max-width: 1020px) {

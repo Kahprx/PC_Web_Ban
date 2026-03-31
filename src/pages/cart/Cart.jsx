@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatCurrency, products } from "../../data/storeData";
+import { useAuth } from "../../context/AuthContext";
+import {
+  clearCartApi,
+  fetchCart,
+  removeCartItemApi,
+  updateCartItemApi,
+} from "../../services/cartService";
 import "../shared/PageBlocks.css";
 
 const initialCartItems = products.slice(0, 3).map((product, index) => ({
@@ -29,23 +36,100 @@ const serviceNotes = [
 ];
 
 export default function Cart() {
+  const { token } = useAuth();
   const [cartItems, setCartItems] = useState(initialCartItems);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isDemo, setIsDemo] = useState(true);
+
+  const mapApiCartItems = (items = []) =>
+    items.map((item) => ({
+      id: item.id ?? item.cart_item_id ?? item.product_id,
+      productId: item.product_id ?? item.productId ?? item.id,
+      name: item.product_name ?? item.name ?? `Product ${item.product_id || ""}`,
+      image: item.image_url || item.image || "",
+      price: Number(item.price ?? item.unit_price ?? 0),
+      qty: Number(item.quantity ?? item.qty ?? 1),
+      deliveryNote:
+        item.stock_qty > 0 ? "Co san, giao nhanh" : "Dat truoc, giao 1 - 3 ngay",
+      type: "SAN PHAM",
+      specs: item.specs || {},
+    }));
+
+  const loadCart = async () => {
+    if (!token) {
+      setIsDemo(true);
+      setCartItems(initialCartItems);
+      setError("");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const apiItems = await fetchCart(token);
+      setCartItems(mapApiCartItems(apiItems));
+      setIsDemo(false);
+      setError("");
+    } catch (err) {
+      setError(err?.message || "Khong tai duoc cart tu API. Dang dung du lieu demo.");
+      setIsDemo(true);
+      setCartItems(initialCartItems);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const updateQty = (id, delta) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, qty: Math.max(1, item.qty + delta) }
-          : item
-      )
-    );
+    if (isDemo || !token) {
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
+        )
+      );
+      return;
+    }
+
+    const target = cartItems.find((item) => item.id === id);
+    if (!target) return;
+
+    const nextQty = Math.max(1, target.qty + delta);
+
+    updateCartItemApi({ cartItemId: id, quantity: nextQty }, token)
+      .then(loadCart)
+      .catch((err) => setError(err?.message || "Cap nhat so luong that bai"));
   };
 
   const removeItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    if (isDemo || !token) {
+      setCartItems((prev) => prev.filter((item) => item.id !== id));
+      return;
+    }
+
+    removeCartItemApi(id, token)
+      .then(loadCart)
+      .catch((err) => setError(err?.message || "Xoa khoi gio that bai"));
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const clearCart = () => {
+    if (isDemo || !token) {
+      setCartItems([]);
+      return;
+    }
+
+    clearCartApi(token)
+      .then(loadCart)
+      .catch((err) => setError(err?.message || "Xoa gio hang that bai"));
+  };
+
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0),
+    0
+  );
   const shippingFee = subtotal >= 30_000_000 ? 0 : cartItems.length > 0 ? 45_000 : 0;
   const setupSupport = cartItems.length > 0 ? 0 : 0;
   const memberDiscount = subtotal >= 60_000_000 ? 750_000 : subtotal >= 30_000_000 ? 300_000 : 0;
@@ -90,7 +174,25 @@ export default function Cart() {
           <strong>{shippingFee === 0 ? "Mien phi" : formatCurrency(shippingFee)}</strong>
           <span>Don tu 30 trieu duoc uu tien free ship noi thanh.</span>
         </article>
+
+        <article className="page-highlight-card">
+          <p>Nguon du lieu</p>
+          <strong>{isDemo ? "Demo" : "API"}</strong>
+          <span>{isDemo ? "Dang su dung du lieu mau" : "Da ket noi API cart"}</span>
+        </article>
       </section>
+
+      {loading && (
+        <section className="page-panel" style={{ marginTop: "12px" }}>
+          <p>Dang tai du lieu gio hang...</p>
+        </section>
+      )}
+
+      {error && (
+        <section className="page-panel" style={{ marginTop: "12px" }}>
+          <p style={{ color: "#d14343" }}>{error}</p>
+        </section>
+      )}
 
       {cartItems.length === 0 ? (
         <>
@@ -149,9 +251,13 @@ export default function Cart() {
                       <div className="page-cart-head">
                         <div>
                           <h3>{item.name}</h3>
-                          <p>
-                            {item.specs.cpu} | {item.specs.vga}
-                          </p>
+                          {item.specs?.cpu || item.specs?.vga ? (
+                            <p>
+                              {item.specs.cpu} | {item.specs.vga}
+                            </p>
+                          ) : (
+                            <p>Thong so dang cap nhat</p>
+                          )}
                           <div className="page-pill-row" style={{ marginTop: "8px" }}>
                             <span className="page-pill">{item.type}</span>
                             <span className="page-pill is-soft">{item.deliveryNote}</span>
@@ -176,7 +282,7 @@ export default function Cart() {
                         </div>
 
                         <div className="page-cart-actions">
-                          <Link to={`/product/${item.id}`} className="page-ghost-btn">
+                          <Link to={`/product/${item.productId ?? item.id}`} className="page-ghost-btn">
                             Xem chi tiet
                           </Link>
                           <button type="button" className="page-ghost-btn" onClick={() => removeItem(item.id)}>
@@ -264,6 +370,9 @@ export default function Cart() {
                 <Link to="/build-pc" className="page-btn-outline">
                   Chinh lai cau hinh
                 </Link>
+                <button type="button" className="page-btn-outline" onClick={clearCart}>
+                  Xoa gio hang
+                </button>
               </div>
             </section>
           </div>

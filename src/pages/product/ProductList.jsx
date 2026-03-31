@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   brandFilters,
@@ -36,6 +36,7 @@ const matchGpuFilter = (product, gpuKey) => {
 };
 
 export default function ProductList() {
+  const pageRef = useRef(null);
   const [search, setSearch] = useState("");
   const [categoryKey, setCategoryKey] = useState("all");
   const [brandKey, setBrandKey] = useState("all");
@@ -101,11 +102,40 @@ export default function ProductList() {
     setPage(1);
   };
 
+  useEffect(() => {
+    const root = pageRef.current;
+    if (!root) return undefined;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const revealElements = Array.from(root.querySelectorAll("[data-reveal]"));
+
+    if (prefersReducedMotion) {
+      revealElements.forEach((element) => element.classList.add("is-visible"));
+      return undefined;
+    }
+
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" }
+    );
+
+    revealElements.forEach((element) => revealObserver.observe(element));
+
+    return () => revealObserver.disconnect();
+  }, []);
+
   return (
-    <div className="plist-page">
+    <div className="plist-page" ref={pageRef}>
       <div className="plist-shell">
-        <aside className="plist-sidebar">
-          <section className="plist-filter-box">
+        <aside className="plist-sidebar plist-reveal is-visible" data-reveal>
+          <section className="plist-filter-box plist-reveal is-visible" data-reveal>
             <h3>Danh Mục</h3>
             <div className="plist-filter-option-list">
               {categoryOptions.map((option) => (
@@ -125,7 +155,7 @@ export default function ProductList() {
             </div>
           </section>
 
-          <section className="plist-filter-box">
+          <section className="plist-filter-box plist-reveal is-visible" data-reveal>
             <h3>Khoảng giá</h3>
 
             <div className="plist-price-control">
@@ -168,7 +198,7 @@ export default function ProductList() {
             </div>
           </section>
 
-          <section className="plist-filter-box">
+          <section className="plist-filter-box plist-reveal is-visible" data-reveal>
             <h3>GPU</h3>
             <div className="plist-filter-option-list">
               {gpuFilters.map((option) => (
@@ -197,7 +227,7 @@ export default function ProductList() {
             </div>
           </section>
 
-          <section className="plist-filter-box">
+          <section className="plist-filter-box plist-reveal is-visible" data-reveal>
             <h3>Thương hiệu</h3>
             <div className="plist-filter-option-list">
               {brandFilters.map((option) => (
@@ -219,13 +249,13 @@ export default function ProductList() {
 
           <p className="plist-side-label">Trang sản phẩm</p>
 
-          <article className="plist-sidebar-banner">
+          <article className="plist-sidebar-banner plist-reveal is-visible" data-reveal>
             {uiBanners.productListSidebar && <img src={uiBanners.productListSidebar} alt="Build PC" />}
           </article>
         </aside>
 
-        <main className="plist-main">
-          <header className="plist-main-header">
+        <main className="plist-main plist-reveal" data-reveal>
+          <header className="plist-main-header plist-reveal" data-reveal>
             <h1>TRANG SẢN PHẨM</h1>
             <div className="plist-header-actions">
               <input
@@ -243,11 +273,16 @@ export default function ProductList() {
             </div>
           </header>
 
-          <section className="plist-quick-filter-row">
+          <section className="plist-quick-filter-row plist-reveal" data-reveal>
             {quickFilters.map((quick) => {
               const icon = categoryTiles[quick.iconIndex]?.icon;
               return (
-                <button key={quick.id} type="button" className="plist-quick-filter-card">
+                <button
+                  key={quick.id}
+                  type="button"
+                  className="plist-quick-filter-card"
+                  style={{ "--stagger": quick.iconIndex + 1 }}
+                >
                   {icon && <img src={icon} alt={quick.label} />}
                   <p>{quick.label}</p>
                 </button>
@@ -255,10 +290,10 @@ export default function ProductList() {
             })}
           </section>
 
-          <section className="plist-grid-box">
+          <section className="plist-grid-box plist-reveal" data-reveal>
             <div className="plist-grid">
-              {visibleProducts.map((product) => (
-                <article key={product.id} className="plist-card">
+              {visibleProducts.map((product, index) => (
+                <article key={product.id} className="plist-card" style={{ "--stagger": index + 1 }}>
                   <Link to={`/product/${product.id}`} className="plist-card-image">
                     <img src={product.image} alt={product.name} />
                   </Link>
@@ -288,7 +323,7 @@ export default function ProductList() {
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={safePage === 1}
               >
-                {'<'}
+                {"<"}
               </button>
 
               {Array.from({ length: totalPages }).map((_, index) => {
@@ -310,7 +345,7 @@ export default function ProductList() {
                 onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                 disabled={safePage === totalPages}
               >
-                {'>'}
+                {">"}
               </button>
             </div>
           </section>

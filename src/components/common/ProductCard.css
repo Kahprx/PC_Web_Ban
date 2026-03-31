@@ -7,6 +7,23 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  transition:
+    transform 0.28s var(--ease-smooth),
+    box-shadow 0.28s ease,
+    border-color 0.22s ease;
+  animation: fade-slide-up 0.45s var(--ease-smooth) both;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 28%, rgba(255, 255, 255, 0.32) 48%, transparent 64%);
+  transform: translateX(-140%) skewX(-18deg);
+  opacity: 0;
 }
 
 .product-card-image-wrap {
@@ -15,17 +32,15 @@
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
+  transition: box-shadow 0.24s ease;
 }
 
 .product-card-image {
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  transition: transform 0.2s ease;
-}
-
-.product-card:hover .product-card-image {
-  transform: scale(1.03);
+  transition: transform 0.3s var(--ease-smooth);
+  animation: clip-reveal-y 0.62s var(--ease-smooth) both;
 }
 
 .product-card-body {
@@ -79,10 +94,10 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   cursor: pointer;
-}
-
-.product-card-button:hover {
-  background: #af906e;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s var(--ease-smooth),
+    box-shadow 0.2s ease;
 }
 
 .product-card.is-compact {
@@ -96,4 +111,30 @@
 .product-card.is-compact .product-card-name {
   min-height: auto;
   font-size: 11px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-card:hover {
+    transform: translateY(-4px);
+    border-color: #d2b89d;
+    box-shadow: 0 12px 20px rgba(88, 61, 36, 0.14);
+  }
+
+  .product-card:hover::after {
+    animation: sheen-sweep 0.7s var(--ease-smooth) both;
+  }
+
+  .product-card:hover .product-card-image-wrap {
+    box-shadow: 0 10px 16px rgba(94, 68, 44, 0.14);
+  }
+
+  .product-card:hover .product-card-image {
+    transform: scale(1.05);
+  }
+
+  .product-card-button:hover {
+    background: #af906e;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 14px rgba(93, 67, 42, 0.18);
+  }
 }
