@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   formatCurrency,
@@ -18,21 +18,30 @@ const categoryChips = [
   "MÀN HÌNH 4K",
   "LAPTOP AI",
   "GAMING GEAR",
-  "ÂM THANH",
+  "AM THANH",
 ];
 
-const detailTitleById = {
-  "home-collection-pc": "PC BÁN CHẠY | TRẢ GÓP 0%",
-  "home-collection-mouse": "CHUỘT BÁN CHẠY | TRẢ GÓP 0%",
-  "home-collection-keyboard": "BÀN PHÍM HE RAPID TRIGGER | TRẢ GÓP 0%",
-  "home-collection-monitor": "MÀN HÌNH BÁN CHẠY | TRẢ GÓP 0%",
-  "home-collection-audio": "TAI NGHE BÁN CHẠY | TRẢ GÓP 0%",
-};
-
 const toTagLabel = (tag) => String(tag || "").replace(/\s+/g, " ").trim().toUpperCase();
+const toProductLinkByChip = (chip) => {
+  const normalizedChip = String(chip || "").trim();
+  if (!normalizedChip || normalizedChip === categoryChips[0] || normalizedChip.toUpperCase() === "TAT CA") {
+    return "/products?title=SAN%20PHAM%20MUON%20MUA";
+  }
+
+  const query = new URLSearchParams({
+    title: normalizedChip,
+  });
+  return `/products?${query.toString()}`;
+};
 
 export default function Home() {
   const pageRef = useRef(null);
+  const [currentHero, setCurrentHero] = useState(0);
+  const heroBanners = [
+    homeHeroBanners.main,
+    homeHeroBanners.rightTop,
+    homeHeroBanners.rightBottom,
+  ].filter(Boolean);
 
   useEffect(() => {
     const root = pageRef.current;
@@ -60,6 +69,11 @@ export default function Home() {
 
     revealElements.forEach((element) => revealObserver.observe(element));
 
+    // Hero slider auto-advance
+    const sliderInterval = setInterval(() => {
+      setCurrentHero((prev) => (prev + 1) % heroBanners.length);
+    }, 4000);
+
     let rafId = 0;
     const updateParallax = () => {
       const progress = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 0.9)));
@@ -77,20 +91,21 @@ export default function Home() {
 
     return () => {
       revealObserver.disconnect();
+      clearInterval(sliderInterval);
       window.removeEventListener("scroll", onScroll);
       if (rafId) {
         window.cancelAnimationFrame(rafId);
       }
     };
-  }, []);
+  }, [heroBanners.length]);
 
   return (
     <div className="home-page" ref={pageRef}>
       <div className="home-shell">
         <section className="home-hero-grid home-reveal is-visible" data-reveal>
-          <article className="home-hero-main-card home-hero-main-card-service home-parallax-layer">
-            {homeHeroBanners.main && <img src={homeHeroBanners.main} alt="Main hero" />}
-
+          <article className="home-hero-main-card home-parallax-layer" 
+                   style={{ "--hero-index": currentHero }}>
+            <img src={heroBanners[currentHero % heroBanners.length]} alt="Main hero" />
             <div className="home-hero-main-content">
               <p className="home-hero-main-kicker">Exclusive Service</p>
               <h1>
@@ -102,7 +117,7 @@ export default function Home() {
                 Dịch vụ bảo trì và nâng cấp cấu hình máy tính theo tiêu chuẩn Gaming quốc tế.
               </p>
               <Link to="/build-pc" className="home-hero-main-cta">
-                Đặt lịch ngay
+                Đặt lịch ngay →
               </Link>
             </div>
           </article>
@@ -110,7 +125,7 @@ export default function Home() {
           <article className="home-hero-side-card home-hero-side-card-offer home-parallax-layer">
             {homeHeroBanners.rightTop && <img src={homeHeroBanners.rightTop} alt="Ưu đãi" />}
             <div className="home-hero-side-label home-hero-side-label-offer">
-              <strong>ƯU ĐÃI LINH KIỆN</strong>
+              <strong>UU DAI LINH KIEN</strong>
               <small>Giảm giá 40%</small>
             </div>
           </article>
@@ -121,9 +136,9 @@ export default function Home() {
           </article>
         </section>
 
-        <section className="home-chip-row home-reveal is-visible" data-reveal>
+        <section className="home-chip-row home-reveal" data-reveal>
           {categoryChips.map((chip) => (
-            <Link key={chip} to="/products" className="home-chip-item">
+            <Link key={chip} to={toProductLinkByChip(chip)} className="home-chip-item">
               {chip}
             </Link>
           ))}
@@ -163,8 +178,6 @@ export default function Home() {
         </section>
 
         <section className="home-detail home-reveal" data-reveal>
-          <p className="home-detail-label">detail</p>
-
           <div className="home-detail-banner-row">
             {homePromoBanners.slice(0, 2).map((banner, index) => (
               <Link
@@ -179,17 +192,8 @@ export default function Home() {
           </div>
 
           <div className="home-detail-sections">
-            {homeCollectionSections.map((section, sectionIndex) => (
+            {homeCollectionSections.slice(0, 2).map((section, sectionIndex) => (  // Reduced to 2 sections for balance
               <article key={section.id} className="home-detail-strip" style={{ "--stagger": sectionIndex + 1 }}>
-                <header className="home-detail-strip-head">
-                  <h3>{detailTitleById[section.id] || section.title}</h3>
-
-                  <div className="home-detail-strip-tags">
-                    {section.tags.slice(0, 8).map((tag) => (
-                      <span key={`${section.id}-${tag}`}>{toTagLabel(tag)}</span>
-                    ))}
-                  </div>
-                </header>
 
                 <div className="home-detail-strip-body">
                   <button type="button" className="home-strip-arrow home-strip-arrow-left" aria-label="Prev">
@@ -197,7 +201,7 @@ export default function Home() {
                   </button>
 
                   <div className="home-detail-strip-grid">
-                    {section.items.slice(0, 8).map((item, itemIndex) => (
+                    {section.items.slice(0, 6).map((item, itemIndex) => (  // Reduced to 6 items
                       <Link
                         key={item.id}
                         to={item.href || "/products"}
