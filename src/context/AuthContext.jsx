@@ -99,6 +99,17 @@ const toLocalSession = (account) => ({
   loginAt: new Date().toISOString(),
 });
 
+const toBackendSession = (data) => ({
+  id: `acc-${data.user.id}`,
+  email: data.user.email,
+  account: data.user.email.split("@")[0],
+  name: data.user.full_name || data.user.email,
+  role: data.user.role,
+  token: data.token,
+  source: "backend",
+  loginAt: new Date().toISOString(),
+});
+
 const findLocalAccountByIdentity = (identity, accounts) => {
   if (!identity) return null;
 
@@ -156,6 +167,24 @@ export function AuthProvider({ children }) {
     const localAccounts = readLocalAccounts();
 
     if (!identity.includes("@")) {
+      const localAccount = findLocalAccountByIdentity(identity, localAccounts);
+
+      if (localAccount?.email && password) {
+        try {
+          const data = await loginApi({
+            email: String(localAccount.email).toLowerCase(),
+            password,
+          });
+
+          const backendSession = toBackendSession(data);
+          setSession(backendSession);
+          writeSession(backendSession);
+          return backendSession;
+        } catch (_error) {
+          // fallback to local session below
+        }
+      }
+
       const localSession = tryLoginLocal({ identity, password, accounts: localAccounts });
       setSession(localSession);
       writeSession(localSession);
@@ -172,16 +201,7 @@ export function AuthProvider({ children }) {
         password,
       });
 
-      const nextSession = {
-        id: `acc-${data.user.id}`,
-        email: data.user.email,
-        account: data.user.email.split("@")[0],
-        name: data.user.full_name || data.user.email,
-        role: data.user.role,
-        token: data.token,
-        source: "backend",
-        loginAt: new Date().toISOString(),
-      };
+      const nextSession = toBackendSession(data);
 
       setSession(nextSession);
       writeSession(nextSession);
@@ -229,16 +249,7 @@ export function AuthProvider({ children }) {
         password: safePassword,
       });
 
-      const nextSession = {
-        id: `acc-${data.user.id}`,
-        email: data.user.email,
-        account: data.user.email.split("@")[0],
-        name: data.user.full_name || data.user.email,
-        role: data.user.role,
-        token: data.token,
-        source: "backend",
-        loginAt: new Date().toISOString(),
-      };
+      const nextSession = toBackendSession(data);
 
       setSession(nextSession);
       writeSession(nextSession);

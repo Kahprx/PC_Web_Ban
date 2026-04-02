@@ -10,6 +10,25 @@ const router = express.Router();
  *   post:
  *     summary: Register user
  *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [fullName, email, password]
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Register success
+ *       400:
+ *         description: Validation error
  */
 router.post('/register', register);
 
@@ -19,6 +38,23 @@ router.post('/register', register);
  *   post:
  *     summary: Login user
  *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login success
+ *       401:
+ *         description: Unauthorized
  */
 router.post('/login', login);
 

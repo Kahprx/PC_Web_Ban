@@ -1,6 +1,8 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
 import { useAuth } from "../../context/AuthContext";
+import { notifyError, notifySuccess } from "../../utils/notify";
 import "./Auth.css";
 
 const loginHighlights = [
@@ -14,41 +16,14 @@ const demoAccounts = [
   { label: "Admin demo", account: "tk2", password: "123456" },
 ];
 
+const LoginSchema = Yup.object({
+  account: Yup.string().trim().required("Tai khoan la bat buoc"),
+  password: Yup.string().trim().min(6, "Mat khau toi thieu 6 ky tu").required("Mat khau la bat buoc"),
+});
+
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
-
-  const [account, setAccount] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!account.trim() || !password.trim()) {
-      setError("Vui long nhap du tai khoan va mat khau.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const session = await login({ account, password });
-
-      if (session?.role === "admin") {
-        navigate("/admin/dashboard", { replace: true });
-        return;
-      }
-
-      navigate("/", { replace: true });
-    } catch (err) {
-      setError(err?.message || "Dang nhap that bai.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="auth-page">
@@ -98,45 +73,58 @@ export default function Login() {
           <div className="auth-card-top">
             <p className="auth-kicker">Login</p>
             <h2>Dang nhap tai khoan</h2>
-            <p>
-              Nhap username, email hoac tai khoan demo de truy cap nhanh vao he
-              thong.
-            </p>
+            <p>Nhap username, email hoac tai khoan demo de truy cap nhanh vao he thong.</p>
           </div>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <div className="auth-field">
-              <label htmlFor="login-account">Tai khoan</label>
-              <input
-                id="login-account"
-                type="text"
-                placeholder="username hoac email"
-                value={account}
-                onChange={(event) => setAccount(event.target.value)}
-              />
-            </div>
+          <Formik
+            initialValues={{ account: "", password: "" }}
+            validationSchema={LoginSchema}
+            onSubmit={async (values, { setSubmitting, setStatus }) => {
+              try {
+                setStatus("");
+                const session = await login(values);
+                notifySuccess("Dang nhap thanh cong");
 
-            <div className="auth-field">
-              <label htmlFor="login-password">Mat khau</label>
-              <input
-                id="login-password"
-                type="password"
-                placeholder="Nhap mat khau"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </div>
+                if (session?.role === "admin") {
+                  navigate("/admin/dashboard", { replace: true });
+                  return;
+                }
 
-            {error && (
-              <div className="auth-note is-error" aria-live="polite">
-                {error}
-              </div>
+                navigate("/", { replace: true });
+              } catch (error) {
+                setStatus(error?.message || "Dang nhap that bai");
+                notifyError(error, "Dang nhap that bai");
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            {({ isSubmitting, status }) => (
+              <Form className="auth-form">
+                <div className="auth-field">
+                  <label htmlFor="account">Tai khoan</label>
+                  <Field id="account" name="account" type="text" placeholder="username hoac email" />
+                  <ErrorMessage name="account" component="div" className="auth-note is-error" />
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="password">Mat khau</label>
+                  <Field id="password" name="password" type="password" placeholder="Nhap mat khau" />
+                  <ErrorMessage name="password" component="div" className="auth-note is-error" />
+                </div>
+
+                {status ? (
+                  <div className="auth-note is-error" aria-live="polite">
+                    {status}
+                  </div>
+                ) : null}
+
+                <button type="submit" className="auth-submit" disabled={isSubmitting}>
+                  {isSubmitting ? "DANG DANG NHAP..." : "DANG NHAP"}
+                </button>
+              </Form>
             )}
-
-            <button type="submit" className="auth-submit" disabled={loading}>
-              {loading ? "DANG DANG NHAP..." : "DANG NHAP"}
-            </button>
-          </form>
+          </Formik>
 
           <div className="auth-divider" />
 
@@ -146,9 +134,8 @@ export default function Login() {
           </div>
 
           <div className="auth-note">
-            Neu nhap email, he thong uu tien thu backend truoc. Neu dang dung
-            username nhu <strong>tk1</strong> hoac <strong>tk2</strong>, app se dung
-            local demo account.
+            Neu nhap email, he thong uu tien thu backend truoc. Neu dang dung username
+            nhu <strong>tk1</strong> hoac <strong>tk2</strong>, app se dung local demo account.
           </div>
         </section>
       </div>

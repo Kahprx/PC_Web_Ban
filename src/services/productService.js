@@ -65,5 +65,7 @@ export async function uploadProductImage(file, token) {
 export const toAbsoluteImageUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return `${API_BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+  const normalizedPath = `${path.startsWith('/') ? '' : '/'}${path}`;
+  if (!API_BASE_URL) return normalizedPath;
+  return `${API_BASE_URL}${normalizedPath}`;
 };

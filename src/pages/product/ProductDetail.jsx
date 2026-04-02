@@ -3,18 +3,76 @@ import { useParams } from "react-router-dom";
 import ProductCard from "../../components/common/ProductCard";
 import { useAuth } from "../../context/AuthContext";
 import { addToCartApi } from "../../services/cartService";
-import { fetchProductById, toAbsoluteImageUrl } from "../../services/productService";
+import { fetchProductById, fetchProducts, toAbsoluteImageUrl } from "../../services/productService";
 import { fetchProductRating } from "../../services/reviewService";
-import {
-  articleCards,
-  comboItems,
-  formatCurrency,
-  getProductById,
-  getRelatedProducts,
-  products,
-  uiBanners,
-} from "../../data/storeData";
+import { articleCards, comboItems, formatCurrency, uiBanners } from "../../data/storeData";
 import "./ProductDetail.css";
+
+const FALLBACK_SPEC = {
+  cpu: "CPU dang cap nhat",
+  mainboard: "Mainboard dang cap nhat",
+  ram: "RAM dang cap nhat",
+  vga: "VGA dang cap nhat",
+  ssd: "SSD dang cap nhat",
+  hdd: "HDD dang cap nhat",
+  psu: "PSU dang cap nhat",
+  case: "CASE dang cap nhat",
+  cooler: "COOLER dang cap nhat",
+};
+
+const toCardProduct = (item) => {
+  const image = toAbsoluteImageUrl(item?.image_url || item?.image || "");
+
+  return {
+    id: item?.id,
+    name: item?.name || "San pham",
+    type: item?.category_name || "SAN PHAM",
+    image,
+    price: Number(item?.price || 0),
+    specs: {
+      cpu: item?.cpu || FALLBACK_SPEC.cpu,
+      ram: item?.ram || FALLBACK_SPEC.ram,
+      vga: item?.vga || FALLBACK_SPEC.vga,
+    },
+  };
+};
+
+const normalizeProduct = (data) => {
+  if (!data) return null;
+
+  const baseImage = data.image_url || data.image || "";
+  const normalizedImage = baseImage ? toAbsoluteImageUrl(baseImage) : "";
+  const gallery = Array.isArray(data.gallery) && data.gallery.length > 0
+    ? data.gallery.map((img) => toAbsoluteImageUrl(img))
+    : normalizedImage
+    ? [normalizedImage]
+    : [];
+
+  return {
+    id: data.id,
+    categoryId: Number(data.category_id || 0),
+    productCode: data.product_code || data.productCode || "",
+    name: data.name,
+    price: Number(data.price ?? 0),
+    oldPrice: Number(data.old_price ?? 0),
+    brand: data.brand || data.category_name || "PC STORE",
+    type: data.category_name || "PC",
+    description: data.description,
+    image: normalizedImage,
+    gallery,
+    specs: {
+      cpu: data.cpu || data.specs?.cpu || FALLBACK_SPEC.cpu,
+      mainboard: data.mainboard || data.specs?.mainboard || FALLBACK_SPEC.mainboard,
+      ram: data.ram || data.specs?.ram || FALLBACK_SPEC.ram,
+      vga: data.vga || data.specs?.vga || FALLBACK_SPEC.vga,
+      ssd: data.ssd || data.specs?.ssd || FALLBACK_SPEC.ssd,
+      hdd: data.hdd || data.specs?.hdd || FALLBACK_SPEC.hdd,
+      psu: data.psu || data.specs?.psu || FALLBACK_SPEC.psu,
+      case: data.case || data.specs?.case || FALLBACK_SPEC.case,
+      cooler: data.cooler || data.specs?.cooler || FALLBACK_SPEC.cooler,
+    },
+  };
+};
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -26,40 +84,8 @@ export default function ProductDetail() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [rating, setRating] = useState({ avgRating: 0, totalReviews: 0 });
-
-  const normalizeProduct = (data) => {
-    if (!data) return null;
-    const baseImage = data.image_url || data.image || "";
-    const normalizedImage = baseImage ? toAbsoluteImageUrl(baseImage) : "";
-    const gallery = Array.isArray(data.gallery) && data.gallery.length > 0
-      ? data.gallery.map((img) => toAbsoluteImageUrl(img))
-      : normalizedImage
-      ? [normalizedImage]
-      : [];
-
-    return {
-      id: data.id,
-      name: data.name,
-      price: Number(data.price ?? 0),
-      oldPrice: Number(data.price ?? 0) * 1.1,
-      brand: data.brand || data.category_name || "PC STORE",
-      type: data.category_name || "PC",
-      description: data.description,
-      image: normalizedImage,
-      gallery,
-      specs: {
-        cpu: data.cpu || data.specs?.cpu || "CPU dang cap nhat",
-        mainboard: data.mainboard || data.specs?.mainboard || "Mainboard dang cap nhat",
-        ram: data.ram || data.specs?.ram || "RAM dang cap nhat",
-        vga: data.vga || data.specs?.vga || "VGA dang cap nhat",
-        ssd: data.ssd || data.specs?.ssd || "SSD dang cap nhat",
-        hdd: data.hdd || data.specs?.hdd || "HDD dang cap nhat",
-        psu: data.psu || data.specs?.psu || "PSU dang cap nhat",
-        case: data.case || data.specs?.case || "CASE dang cap nhat",
-        cooler: data.cooler || data.specs?.cooler || "COOLER dang cap nhat",
-      },
-    };
-  };
+  const [apiRelatedProducts, setApiRelatedProducts] = useState([]);
+  const [apiViewedProducts, setApiViewedProducts] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -67,17 +93,18 @@ export default function ProductDetail() {
     const loadProduct = async () => {
       setLoading(true);
       setInfo("");
+
       try {
         const apiData = await fetchProductById(id);
         if (!mounted) return;
+
         const normalized = normalizeProduct(apiData?.data || apiData);
         setProduct(normalized);
         setError("");
       } catch (err) {
-        const fallback = getProductById(id);
         if (mounted) {
-          setProduct(fallback);
-          setError(err?.message ? `Fallback demo: ${err.message}` : "Dang dung du lieu demo");
+          setProduct(null);
+          setError(err?.message || "Khong tai duoc chi tiet san pham tu API.");
         }
       } finally {
         if (mounted) {
@@ -90,6 +117,7 @@ export default function ProductDetail() {
       try {
         const r = await fetchProductRating(id);
         if (!mounted || !r) return;
+
         setRating({
           avgRating: Number(r.avgRating ?? r.avg_rating ?? 0),
           totalReviews: Number(r.totalReviews ?? r.total_reviews ?? 0),
@@ -107,21 +135,79 @@ export default function ProductDetail() {
     };
   }, [id]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSideProducts = async () => {
+      if (!product?.id) {
+        setApiRelatedProducts([]);
+        setApiViewedProducts([]);
+        return;
+      }
+
+      try {
+        const relatedParams = {
+          status: "active",
+          limit: 12,
+          page: 1,
+          sortBy: "created_at",
+          sortOrder: "desc",
+        };
+
+        if (product.categoryId > 0) {
+          relatedParams.categoryId = product.categoryId;
+        }
+
+        const [relatedResponse, viewedResponse] = await Promise.all([
+          fetchProducts(relatedParams),
+          fetchProducts({
+            status: "active",
+            limit: 20,
+            page: 1,
+            sortBy: "created_at",
+            sortOrder: "desc",
+          }),
+        ]);
+
+        if (!mounted) return;
+
+        const related = (relatedResponse?.data || [])
+          .filter((item) => Number(item.id) !== Number(product.id))
+          .slice(0, 8)
+          .map(toCardProduct);
+
+        const viewed = (viewedResponse?.data || [])
+          .filter((item) => Number(item.id) !== Number(product.id))
+          .slice(0, 6)
+          .map(toCardProduct);
+
+        setApiRelatedProducts(related);
+        setApiViewedProducts(viewed);
+      } catch {
+        if (mounted) {
+          setApiRelatedProducts([]);
+          setApiViewedProducts([]);
+        }
+      }
+    };
+
+    loadSideProducts();
+
+    return () => {
+      mounted = false;
+    };
+  }, [product?.categoryId, product?.id]);
+
   const safeDefaultImage = product?.gallery?.[0] ?? product?.image ?? "";
   const displayImage = product?.gallery?.includes(activeImage) ? activeImage : safeDefaultImage;
+  const displayCode = String(product?.productCode || "").trim() || `PC-${String(Number(product.id ?? 0) + 1).padStart(4, "0")}`;
 
-  const relatedProducts = useMemo(
-    () => getRelatedProducts(product?.id ?? id, 8),
-    [product?.id, id]
-  );
-
-  const viewedProducts = useMemo(() => {
-    const currentId = product?.id ?? -1;
-    return products.filter((item) => item.id !== currentId).slice(0, 6);
-  }, [product]);
+  const relatedProducts = useMemo(() => apiRelatedProducts, [apiRelatedProducts]);
+  const viewedProducts = useMemo(() => apiViewedProducts, [apiViewedProducts]);
 
   const handleAddToCart = async () => {
     if (!product?.id) return;
+
     if (!token) {
       setError("Vui long dang nhap de them gio hang.");
       return;
@@ -152,7 +238,7 @@ export default function ProductDetail() {
     return (
       <div className="pd-page">
         <div className="pd-shell">
-          <div className="pd-empty">Khong tim thay san pham.</div>
+          <div className="pd-empty">{error || "Khong tim thay san pham."}</div>
         </div>
       </div>
     );
@@ -206,12 +292,12 @@ export default function ProductDetail() {
           <article className="pd-summary-box">
             <h1>{product.name}</h1>
             <p className="pd-meta">
-              Ma SP: PC-{String(Number(product.id ?? 0) + 1).padStart(4, "0")} | Thuong hieu: {product.brand}
+              Ma SP: {displayCode} | Thuong hieu: {product.brand}
             </p>
 
             <div className="pd-price-row">
               <strong>{formatCurrency(product.price)}</strong>
-              <span>{formatCurrency(product.oldPrice)}</span>
+              {product.oldPrice > product.price ? <span>{formatCurrency(product.oldPrice)}</span> : null}
             </div>
 
             <div className="pd-action-row">

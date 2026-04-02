@@ -150,7 +150,7 @@ export default function Cart() {
           <div className="page-hero-actions">
             <span className="page-inline-code">Cart demo</span>
             <Link to="/products" className="page-btn-outline">
-              Xem them san pham
+              Xem thêm sản phẩm
             </Link>
           </div>
         </div>
@@ -158,7 +158,7 @@ export default function Cart() {
 
       <section className="page-highlight-grid">
         <article className="page-highlight-card">
-          <p>San pham dang giu</p>
+<p>Sản phẩm đang giữ</p>
           <strong>{cartItems.length}</strong>
           <span>So mon dang nam trong don cho khach xac nhan.</span>
         </article>
@@ -266,7 +266,7 @@ export default function Cart() {
 
                         <div className="page-cart-price">
                           <strong>{formatCurrency(item.price * item.qty)}</strong>
-                          <span>{formatCurrency(item.price)} / san pham</span>
+<span>{formatCurrency(item.price)} / sản phẩm</span>
                         </div>
                       </div>
 
@@ -326,7 +326,7 @@ export default function Cart() {
 
               <div className="page-summary-list" style={{ marginTop: "14px" }}>
                 <div className="page-summary-line">
-                  <p>Tam tinh san pham</p>
+<p>Tạm tính sản phẩm</p>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="page-summary-line">

@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import {
   buildBottomBanners,
   buildPartCatalog,
+  gearCatalogList,
   formatCurrency,
+  linhKienCatalogList,
+  monitorCatalogList,
+  pcCatalogList,
 } from "../../data/storeData";
 import iconMonitor from "../../assets/images/PC/ICON/monitor.png";
 import iconKeyboard from "../../assets/images/PC/ICON/keyboard.png";
@@ -285,7 +289,7 @@ export default function BuildPC() {
                 Bat dau build
               </button>
               <Link to="/products" className="build-cta build-cta-secondary">
-                Xem san pham co san
+                Xem sản phẩm có sẵn
               </Link>
             </div>
           </div>
@@ -563,6 +567,80 @@ export default function BuildPC() {
               <span>{card.text}</span>
             </article>
           ))}
+        </section>
+
+        <section className="build-catalog-section">
+          <article className="build-catalog-card">
+            <header>
+              <p>DANH SACH PC</p>
+              <h3>PC de ban</h3>
+            </header>
+            <div className="build-catalog-list">
+{pcCatalogList.map((item) => (
+                <Link key={item.id} to={item.href || "/products"} className="build-catalog-item">
+                  <img src={item.image} alt={item.name} />
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>{formatCurrency(item.price)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </article>
+
+          <article className="build-catalog-card">
+            <header>
+              <p>DANH SACH GEAR</p>
+              <h3>Gear gaming</h3>
+            </header>
+            <div className="build-catalog-list">
+{gearCatalogList.map((item) => (
+                <Link key={item.id} to={item.href || "/products"} className="build-catalog-item">
+                  <img src={item.image} alt={item.name} />
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>{formatCurrency(item.price)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </article>
+
+          <article className="build-catalog-card">
+            <header>
+              <p>DANH SACH LINH KIEN</p>
+              <h3>CPU / RAM / SSD / PSU</h3>
+            </header>
+            <div className="build-catalog-list">
+{linhKienCatalogList.map((item) => (
+                <Link key={item.id} to={item.href || "/build-pc"} className="build-catalog-item">
+                  <img src={item.image} alt={item.name} />
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>{formatCurrency(item.price)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </article>
+
+          <article className="build-catalog-card">
+            <header>
+              <p>MAN HINH</p>
+              <h3>144HZ den 540HZ</h3>
+            </header>
+            <div className="build-catalog-list">
+              {monitorCatalogList.map((item) => (
+                <Link key={item.id} to={item.href || "/products"} className="build-catalog-item">
+                  <img src={item.image} alt={item.name} />
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>{item.subtitle} | {formatCurrency(item.price)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </article>
         </section>
 
         <section className="build-showcase-grid">

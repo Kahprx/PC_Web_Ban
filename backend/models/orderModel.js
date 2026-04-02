@@ -50,6 +50,65 @@ const listOrders = async ({ userId = null, page = 1, limit = 10 }) => {
   };
 };
 
+const listOrdersForAdmin = async ({
+  search = "",
+  status = null,
+  page = 1,
+  limit = 20,
+}) => {
+  const conditions = ["1 = 1"];
+  const values = [];
+  let idx = 1;
+
+  if (search) {
+    conditions.push(`(u.full_name ILIKE $${idx} OR u.email ILIKE $${idx} OR CAST(o.id AS TEXT) ILIKE $${idx})`);
+    values.push(`%${search}%`);
+    idx += 1;
+  }
+
+  if (status) {
+    conditions.push(`o.status = $${idx}`);
+    values.push(status);
+    idx += 1;
+  }
+
+  const countResult = await query(
+    `SELECT COUNT(*)::int AS total
+     FROM orders o
+     JOIN users u ON u.id = o.user_id
+     WHERE ${conditions.join(" AND ")}`,
+    values
+  );
+
+  const offset = (page - 1) * limit;
+  const result = await query(
+    `SELECT
+      o.id,
+      o.user_id,
+      u.full_name,
+      u.email,
+      o.total_amount,
+      o.status,
+      o.shipping_address,
+      o.payment_method,
+      o.created_at,
+      o.updated_at
+     FROM orders o
+     JOIN users u ON u.id = o.user_id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY o.created_at DESC
+     LIMIT $${idx} OFFSET $${idx + 1}`,
+    [...values, limit, offset]
+  );
+
+  return {
+    items: result.rows,
+    total: countResult.rows[0].total,
+    page,
+    limit,
+  };
+};
+
 const getOrderById = async (orderId, userId = null) => {
   const values = [orderId];
   let where = 'WHERE o.id = $1';
@@ -144,6 +203,18 @@ const decreaseProductStock = async (client, { productId, quantity }) => {
   );
 };
 
+const updateOrderStatus = async (orderId, status) => {
+  const result = await query(
+    `UPDATE orders
+     SET status = $2
+     WHERE id = $1
+     RETURNING id, user_id, total_amount, status, shipping_address, payment_method, created_at, updated_at`,
+    [orderId, status]
+  );
+
+  return result.rows[0] || null;
+};
+
 const getOrderStatistics = async () => {
   const overviewResult = await query(
     `SELECT
@@ -172,10 +243,12 @@ const getOrderStatistics = async () => {
 
 module.exports = {
   listOrders,
+  listOrdersForAdmin,
   getOrderById,
   getProductForOrder,
   createOrderRecord,
   createOrderItemRecord,
   decreaseProductStock,
+  updateOrderStatus,
   getOrderStatistics,
 };

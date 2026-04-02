@@ -13,10 +13,10 @@ import { useAuth } from "../context/AuthContext";
 
 const navItems = [
   { to: "/build-pc", label: "BUILD PC" },
-  { to : "/products", label: "LAPTOP" },
-  { to: "/products", label: "LINH KIEN" },
-  { to: "/products", label: "MAN HINH" },
-  { to: "/products", label: "GEAR" },
+  { to: "/products?title=LAPTOP", label: "LAPTOP" },
+  { to: "/products?title=LINH%20KIEN", label: "LINH KIEN" },
+  { to: "/products?title=MAN%20HINH", label: "MAN HINH" },
+  { to: "/products?title=GAMING%20GEAR", label: "GAMING GEAR" },
 ];
 
 const megaSidebarItems = [
@@ -319,7 +319,7 @@ export default function Header() {
 
         <div className="site-search-wrap">
           <img src={iconSearch} alt="Search" className="site-search-icon-img" />
-          <input type="text" placeholder="Tim kiem san pham..." />
+          <input type="text" placeholder="Tìm kiếm sản phẩm..." />
         </div>
 
         <div className="site-actions">
@@ -332,7 +332,7 @@ export default function Header() {
               {!isAdmin && (
                 <Link to="/cart">
                   <img src={iconCart} alt="Cart" className="site-action-icon" />
-                  GIO HANG
+                  GIỎ HÀNG
                 </Link>
               )}
               <Link
@@ -354,7 +354,7 @@ export default function Header() {
               </Link>
               <Link to="/cart">
                 <img src={iconCart} alt="Cart" className="site-action-icon" />
-                GIO HANG
+                GIỎ HÀNG
               </Link>
             </>
           )}

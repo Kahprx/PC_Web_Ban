@@ -13,12 +13,27 @@
     "db:check": "npm --prefix backend run db:check",
     "db:init": "npm --prefix backend run db:init",
     "db:seed": "npm --prefix backend run db:seed",
+    "db:seed:100": "npm --prefix backend run db:seed:100",
+    "db:seed:1990": "npm --prefix backend run db:seed:1990",
+    "db:seed:100:market": "npm --prefix backend run db:seed:100:market",
+    "db:sync:sources": "npm --prefix backend run db:sync:sources",
+    "db:sync:sources:retry": "npm --prefix backend run db:sync:sources:retry",
+    "db:export:seed:1990": "npm --prefix backend run db:export:seed:1990",
     "db:reset": "npm --prefix backend run db:reset"
   },
   "dependencies": {
+    "axios": "^1.14.0",
+    "chart.js": "^4.5.1",
+    "formik": "^2.4.9",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "react": "^19.2.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.0"
+    "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^7.13.0",
+    "xlsx": "^0.18.5",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

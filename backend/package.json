@@ -9,7 +9,19 @@
     "db:check": "node scripts/checkDb.js",
     "db:init": "node scripts/initDb.js --schema",
     "db:seed": "node scripts/initDb.js --seed",
-    "db:reset": "node scripts/initDb.js --reset --schema --seed"
+    "db:reset": "node scripts/initDb.js --reset --schema --seed",
+    "db:seed:100": "node scripts/seedLargeCatalog.js 100",
+    "db:seed:1990": "node scripts/seedLargeCatalog.js 1990",
+    "db:seed:100:market": "node scripts/seedFromExportCsv.js 100 products_3000_2026-03-31.csv",
+    "db:seed:3000": "node scripts/seedLargeCatalog.js 3000",
+    "db:sync:sources": "node scripts/syncSourceProducts.js 1990 14",
+    "db:sync:sources:retry": "node scripts/syncSourceProducts.js 1990 14 20",
+    "db:images:market": "node scripts/assignMarketplaceImages.js",
+    "db:align:name-image-code": "node scripts/alignProductNameImageCode.js",
+    "db:normalize:product-codes": "node scripts/normalizeProductCodesAndNames.js",
+    "db:export:products": "node scripts/exportProductsCsv.js",
+    "db:export:seed:1990": "node scripts/exportSeedSql.js 1990",
+    "db:compat:full": "node scripts/upgradeFullSchemaForCurrentApi.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

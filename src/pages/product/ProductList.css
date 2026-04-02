@@ -1,7 +1,9 @@
 .plist-page {
-  background: #efefef;
-  padding: 12px 0 18px;
-  animation: fade-in 0.45s ease both;
+  background:
+    radial-gradient(circle at 10% -6%, rgba(196, 168, 136, 0.14), transparent 32%),
+    linear-gradient(180deg, #f3f1ee, #ededed);
+  padding: 14px 0 20px;
+  animation: fade-in 0.52s ease both;
 }
 
 .plist-reveal {
@@ -22,14 +24,14 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
-  gap: 14px;
+  gap: 16px;
 }
 
 .plist-sidebar,
 .plist-main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .plist-filter-box,
@@ -60,29 +62,39 @@
 }
 
 .plist-filter-box {
-  padding: 10px;
+  padding: 12px;
+  animation: fade-slide-up 0.48s var(--ease-smooth) both;
 }
 
 .plist-filter-box h3 {
-  margin: 0 0 8px;
-  font-size: 13px;
+  margin: 0 0 10px;
+  font-size: 17px;
   color: #242424;
   font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.plist-focus-caption {
+  margin: -2px 0 10px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #7b6754;
+  font-weight: 600;
 }
 
 .plist-filter-option-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
 }
 
 .plist-filter-option {
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 10px;
   background: #f7f2eb;
   color: #47382a;
-  padding: 5px 7px;
-  font-size: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
   line-height: 1.2;
   font-weight: 700;
   display: inline-flex;
@@ -96,12 +108,12 @@
 }
 
 .plist-filter-indicator {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
   border: 1px solid #bfa88e;
   background: #fff;
-  flex: 0 0 10px;
+  flex: 0 0 12px;
 }
 
 .plist-filter-option.is-active {
@@ -116,7 +128,7 @@
 
 .plist-price-control {
   display: grid;
-  gap: 5px;
+  gap: 8px;
 }
 
 .plist-price-control input[type="range"] {
@@ -125,16 +137,16 @@
 }
 
 .plist-price-input-row {
-  margin-top: 6px;
+  margin-top: 8px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
+  gap: 6px;
   align-items: center;
 }
 
 .plist-price-input-row span {
   text-align: center;
-  font-size: 12px;
+  font-size: 14px;
   color: #6c5a49;
   font-weight: 700;
 }
@@ -142,10 +154,10 @@
 .plist-price-input-row input {
   width: 100%;
   border: 1px solid #e0d1c0;
-  border-radius: 6px;
+  border-radius: 9px;
   background: #faf7f3;
-  padding: 5px 6px;
-  font-size: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
   color: #3d3228;
   outline: none;
   transition:
@@ -153,19 +165,61 @@
     box-shadow 0.2s ease;
 }
 
+.plist-select-wrap {
+  position: relative;
+}
+
+.plist-select {
+  width: 100%;
+  border: 1px solid #d6c4b1;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, #fff, #faf5ef),
+    linear-gradient(45deg, transparent 50%, #6f5844 50%),
+    linear-gradient(135deg, #6f5844 50%, transparent 50%);
+  background-repeat: no-repeat;
+  background-size:
+    100% 100%,
+    7px 7px,
+    7px 7px;
+  background-position:
+    center,
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 13px) calc(50% - 3px);
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 9px 34px 9px 11px;
+  color: #2c251d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  outline: none;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s var(--ease-smooth);
+}
+
+.plist-select:focus {
+  border-color: #b49372;
+  box-shadow: 0 0 0 3px rgba(180, 147, 114, 0.2);
+}
+
 .plist-filter-action-row {
-  margin-top: 8px;
+  margin-top: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 8px;
 }
 
 .plist-filter-action-row button {
   border: 1px solid #b99878;
   border-radius: 999px;
-  padding: 5px 7px;
-  font-size: 10px;
+  min-height: 36px;
+  padding: 8px 10px;
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   transition:
     transform 0.2s var(--ease-smooth),
     box-shadow 0.2s ease,
@@ -204,7 +258,7 @@
 }
 
 .plist-main-header {
-  padding: 9px 10px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -213,7 +267,7 @@
 
 .plist-main-header h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: clamp(20px, 3vw, 30px);
   line-height: 1;
   color: #1f1f1f;
   font-weight: 800;
@@ -226,12 +280,12 @@
 }
 
 .plist-header-actions input {
-  width: 260px;
+  width: 300px;
   border: 1px solid #decebe;
   border-radius: 999px;
   background: #f7f3ee;
-  padding: 7px 12px;
-  font-size: 11px;
+  padding: 9px 13px;
+  font-size: 12px;
   outline: none;
   transition:
     border-color 0.2s ease,
@@ -243,8 +297,8 @@
   border-radius: 999px;
   background: #f4e9de;
   color: #5c442d;
-  padding: 6px 10px;
-  font-size: 10px;
+  padding: 8px 11px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -287,7 +341,9 @@
 }
 
 .plist-grid-box {
-  padding: 10px;
+  padding: 12px;
+  animation: fade-slide-up 0.55s var(--ease-smooth) both;
+  animation-delay: 120ms;
 }
 
 .plist-grid {
@@ -309,8 +365,8 @@
     transform 0.26s var(--ease-smooth),
     box-shadow 0.26s ease,
     border-color 0.22s ease;
-  animation: fade-slide-up 0.45s var(--ease-smooth) both;
-  animation-delay: calc(var(--stagger, 0) * 45ms + 90ms);
+  animation: fade-slide-up 0.55s var(--ease-smooth) both;
+  animation-delay: calc(var(--stagger, 0) * 52ms + 130ms);
 }
 
 .plist-card-image {
@@ -342,16 +398,25 @@
 .plist-card-name {
   margin: 0;
   min-height: 30px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.32;
   color: #1e1e1e;
   font-weight: 800;
   text-transform: uppercase;
 }
 
+.plist-card-code {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.2;
+  color: #7a6755;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .plist-card-price {
   margin: 1px 0 0;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1;
   color: #111;
   font-weight: 900;
@@ -363,8 +428,9 @@
   border-radius: 999px;
   background: #c4a888;
   color: #fff;
-  padding: 5px 8px;
-  font-size: 9px;
+  min-height: 34px;
+  padding: 8px 9px;
+  font-size: 11px;
   line-height: 1;
   font-weight: 800;
   text-align: center;
@@ -391,7 +457,7 @@
   border-radius: 8px;
   padding: 12px;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: #686868;
 }
 
@@ -408,10 +474,10 @@
   border-radius: 999px;
   background: #f4ebdf;
   color: #62482f;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   padding: 0;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   transition:
     transform 0.18s var(--ease-smooth),
@@ -428,9 +494,14 @@
 }
 
 .plist-price-input-row input:focus,
-.plist-header-actions input:focus {
+.plist-header-actions input:focus,
+.plist-filter-option:focus-visible,
+.plist-filter-action-row button:focus-visible,
+.plist-pagination button:focus-visible,
+.plist-card-button:focus-visible {
   border-color: #b99b7d;
   box-shadow: 0 0 0 3px rgba(185, 155, 125, 0.18);
+  outline: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -443,6 +514,11 @@
 
   .plist-filter-option:hover {
     transform: translateX(2px);
+  }
+
+  .plist-select:hover {
+    border-color: #c0a082;
+    transform: translateY(-1px);
   }
 
   .plist-filter-action-row button:hover,
@@ -492,6 +568,10 @@
   .plist-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .plist-filter-box h3 {
+    font-size: 15px;
+  }
 }
 
 @media (max-width: 700px) {
@@ -508,5 +588,13 @@
   .plist-quick-filter-row,
   .plist-grid {
     grid-template-columns: 1fr;
+  }
+
+  .plist-filter-action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .plist-filter-action-row button {
+    width: 100%;
   }
 }

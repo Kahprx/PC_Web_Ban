@@ -1,4 +1,10 @@
-﻿const toEntryList = (modules) =>
+import {
+  gearMasterCatalog,
+  monitorMasterCatalog,
+  pcMasterCatalog,
+} from "./masterCatalogData";
+import { formatVnd } from "../utils/currency";
+const toEntryList = (modules) =>
   Object.entries(modules)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([path, module]) => ({
@@ -121,55 +127,16 @@ export const cpuImages = toImageList(cpuEntries);
 const productSlugs = ["pc-gaming", "pc-work", "pc-do-hoa", "pc-stream"];
 const productTypes = ["PC GAMING", "PC VAN PHONG", "PC DO HOA", "PC STREAM"];
 const brandPool = ["AMD", "INTEL"];
-const cpuPool = [
-  "AMD RYZEN 7 9800X3D",
-  "INTEL CORE I7 14700K",
-  "AMD RYZEN 9 9950X",
-  "INTEL CORE I5 14600KF",
-  "AMD RYZEN 5 7600",
-  "INTEL CORE I9 14900K",
-];
-const mainboardPool = [
-  "B650M WIFI DDR5",
-  "B760M DDR5 WIFI",
-  "X670E RGB",
-  "Z790M DDR5",
-  "B550M PRO",
-];
-const ramPool = [
-  "16GB DDR5 6000",
-  "32GB DDR5 6000",
-  "64GB DDR5 5600",
-  "32GB DDR4 3600",
-  "64GB DDR4 3600",
-];
-const vgaPool = [
-  "RTX 4060 8GB",
-  "RTX 4070 SUPER",
-  "RTX 5070 12GB",
-  "RTX 5080 16GB",
-  "RX 7800 XT 16GB",
-];
-const ssdPool = [
-  "SSD NVME 1TB",
-  "SSD NVME 2TB",
-  "SSD NVME 512GB",
-  "SSD GEN4 1TB",
-  "SSD GEN4 2TB",
-];
-const hddPool = ["HDD 1TB", "HDD 2TB", "HDD 4TB"];
-const psuPool = [
-  "650W 80 PLUS BRONZE",
-  "750W 80 PLUS BRONZE",
-  "850W 80 PLUS GOLD",
-  "1000W 80 PLUS GOLD",
-];
-const casePool = [
-  "MID TOWER RGB",
-  "MID TOWER AIRFLOW",
-  "MID TOWER WHITE",
-  "ATX FULL TOWER",
-];
+const cpuPool = pcMasterCatalog.cpu.map((item) => `${item.brand} ${item.model}`);
+const mainboardPool = pcMasterCatalog.mainboard.map(
+  (item) => `${item.brand} ${item.model} (${item.chipset})`
+);
+const ramPool = pcMasterCatalog.ram.map((item) => item.model);
+const vgaPool = pcMasterCatalog.gpu.map((item) => `${item.brand} ${item.model}`);
+const ssdPool = pcMasterCatalog.ssd.map((item) => `${item.brand} ${item.model}`);
+const hddPool = pcMasterCatalog.hdd.map((item) => `${item.brand} ${item.model}`);
+const psuPool = pcMasterCatalog.psu.map((item) => `${item.model} ${item.watt}W`);
+const casePool = pcMasterCatalog.casePc.map((item) => `${item.brand} ${item.model}`);
 const coolerPool = [
   "TAN NHIET KHI T400I",
   "AIO 240MM ARGB",
@@ -289,14 +256,14 @@ export const homeFeaturedCards = [
   {
     id: "feature-0",
     type: "PC GAMING",
-    title: "BỘ PC AMD RYZEN 7",
+    title: "B? PC AMD RYZEN 7",
     price: 23_800_000,
     image: pickImageByFragments(homeFlashSaleEntries, ["pc_1", "bo-pc-gaming", "ryzen-7"], at(products, 0)?.image || fallbackImage),
     href: "/category/pc-gaming",
   },
   {
     id: "feature-1",
-    type: "ÂM THANH",
+    type: "AM THANH",
     title: "IEM SIMGOT EA2000",
     price: 5_800_000,
     image: pickImageByFragments(homeFlashSaleEntries, ["61q7csy-uul", "simgot", "iem"], at(iemImages, 0, fallbackImage)),
@@ -321,7 +288,7 @@ export const homeFeaturedCards = [
   {
     id: "feature-4",
     type: "MOUSE",
-    title: "CHUỘT RAZER VIPER V3 PRO SE",
+    title: "CHU?T RAZER VIPER V3 PRO SE",
     price: 2_700_000,
     image: pickImageByFragments(
       mouseEntries,
@@ -377,18 +344,83 @@ const homeKeyboardStrip = keyboardMiniItems;
 const homeMonitorStrip = monitorMiniItems;
 const homeAudioStrip = iemMiniItems;
 
+export const pcCatalogList = homePcStrip;
+
+const flattenBrandCatalog = (group, prefix, subtitle) =>
+  Object.entries(group).flatMap(([brand, models]) =>
+    models.map((model, index) => ({
+      id: `${prefix}-${brand}-${index}`.toLowerCase().replace(/\s+/g, "-"),
+      name: `${brand} ${model}`,
+      subtitle,
+      image: at(iconImages, index + 10, fallbackImage),
+      price: 790_000 + index * 350_000,
+      href: "/products",
+    }))
+  );
+
+export const gearCatalogList = [
+  ...flattenBrandCatalog(gearMasterCatalog.mouse, "mouse", "CHUOT"),
+  ...flattenBrandCatalog(gearMasterCatalog.pad, "pad", "MOUSE PAD"),
+  ...flattenBrandCatalog(gearMasterCatalog.keyboard, "keyboard", "BAN PHIM"),
+  ...flattenBrandCatalog(gearMasterCatalog.headphone, "headphone", "TAI NGHE"),
+];
+
+const linhKienSeeds = [
+  ...pcMasterCatalog.cpu,
+  ...pcMasterCatalog.mainboard,
+  ...pcMasterCatalog.ram,
+  ...pcMasterCatalog.ssd,
+  ...pcMasterCatalog.hdd,
+  ...pcMasterCatalog.psu,
+  ...pcMasterCatalog.gpu,
+  ...pcMasterCatalog.casePc,
+];
+
+export const linhKienCatalogList = linhKienSeeds.map((item, index) => ({
+  id: `linh-kien-${index}`,
+  name: `${item.brand || "PC"} ${item.model} (${item.code})`,
+  subtitle: "LINH KIEN CHINH HANG",
+  image: at(iconImages, 12 + index, fallbackImage),
+  price: 1_290_000 + index * 250_000,
+  href: "/build-pc",
+}));
+
+export const monitorCatalogList = monitorMasterCatalog.items.map((item, index) => ({
+  id: `monitor-${item.id}`,
+  name: `${item.brand} ${item.model} (${item.code})`,
+  subtitle: `${item.hz}HZ`,
+  image: at(monitorImages, index, fallbackImage),
+  price: 4_990_000 + index * 1_150_000,
+  href: "/products",
+}));
+
+export const pcPartLists = {
+  chips: pcMasterCatalog.cpu,
+  mainboards: pcMasterCatalog.mainboard,
+  ram: pcMasterCatalog.ram,
+  ssd: pcMasterCatalog.ssd,
+  hdd: pcMasterCatalog.hdd,
+  psu: pcMasterCatalog.psu,
+  gpu: pcMasterCatalog.gpu,
+  casePc: pcMasterCatalog.casePc,
+};
+
+export const gearPartLists = gearMasterCatalog;
+
+
 export const homePromoBanners = [
-  pickImageByFragments(
+  pickImageByFragment(
     homeEntries,
-    ["thang_06_banner_build_pc_top_promotion_banner_2", "build_pc_top_promotion"],
-    at(bannerImages, 13, fallbackImage)
+    "thang_06_banner_build_pc_top_promotion_banner_2",
+    at(bannerImages, 0, fallbackImage)
   ),
-  pickImageByFragments(
+  pickImageByFragment(
     homeEntries,
-    ["thang_06_banner_ghe_top_promotion_banner_1", "ghe_top_promotion_banner"],
-    at(bannerImages, 14, fallbackImage)
+    "thang_06_banner_ghe_top_promotion_banner_1",
+    at(bannerImages, 1, fallbackImage)
   ),
 ];
+
 
 export const uiBanners = {
   categorySidebar: homeHeroBanners.rightBottom,
@@ -422,15 +454,27 @@ export const homeCollectionSections = [
   },
   {
     id: "home-collection-monitor",
-    title: "MAN HINH CHOI GAME / DO HOA",
-    tags: ["ASUS", "DELL", "MSI", "LG", "VIEWSONIC", "AOC"],
-    items: homeMonitorStrip,
+    title: "MAN HINH 144HZ - 540HZ",
+    tags: ["ASUS", "MSI", "AOC", "VIEWSONIC", "BENQ", "LG", "SAMSUNG", "DELL", "GIGABYTE", "ALIENWARE"],
+    items: monitorCatalogList,
   },
   {
     id: "home-collection-audio",
     title: "TAI NGHE / IEM",
     tags: ["XUAN VU", "SIMGOT", "MOONDROP", "TRUTHEAR", "KIWI EARS", "KEFINE"],
     items: homeAudioStrip,
+  },
+  {
+    id: "home-collection-gear",
+    title: "DANH SACH GEAR",
+    tags: ["MOUSE", "KEYBOARD", "IEM", "MONITOR", "DESK SETUP"],
+    items: gearCatalogList,
+  },
+  {
+    id: "home-collection-parts",
+    title: "DANH SACH LINH KIEN",
+    tags: ["CPU", "MAINBOARD", "RAM", "VGA", "SSD", "PSU"],
+    items: linhKienCatalogList,
   },
 ];
 
@@ -663,8 +707,7 @@ export const buildBottomBanners = [
   pickImageByFragment(homeFlashSaleEntries, "pc_1", fallbackImage),
 ];
 
-export const formatCurrency = (value) =>
-  `${new Intl.NumberFormat("vi-VN").format(value)} VND`;
+export const formatCurrency = (value) => formatVnd(value);
 
 export const normalizeProductIndex = (rawId) => {
   if (products.length === 0) return 0;
@@ -688,4 +731,5 @@ export const getHeroBanners = () => ({
   rightTop: homeHeroBanners.rightTop,
   rightBottom: homeHeroBanners.rightBottom,
 });
+
 

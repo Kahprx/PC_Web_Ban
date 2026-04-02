@@ -6,6 +6,7 @@ import {
   toAbsoluteImageUrl,
 } from "../../services/productService";
 import { useAuth } from "../../context/AuthContext";
+import { formatVnd } from "../../utils/currency";
 
 import iconCategory from "../../assets/images/PC/ICON/category.png";
 import iconSearch from "../../assets/images/PC/ICON/search.png";
@@ -27,7 +28,7 @@ const customerStatusMap = {
   done: { label: "HOÀN THÀNH", tone: "done" },
 };
 
-const formatPrice = (value) => `${new Intl.NumberFormat("vi-VN").format(Number(value || 0))} đ`;
+const formatPrice = (value) => formatVnd(value);
 
 const resolveProductStatus = (product) => {
   if (Number(product.stock_qty) <= 0) {
@@ -100,7 +101,7 @@ export default function ProductManager() {
 
   const handleDelete = async (id) => {
     if (!token) {
-      setError("Bạn cần đăng nhập bằng tài khoản admin backend để thao tác CRUD.");
+      setError("Bạn đang ở local demo account. Hãy đăng xuất và đăng nhập admin backend (ví dụ: tk2 / 123456 hoặc admin@kahstore.vn / Admin@123).");
       return;
     }
 
@@ -123,8 +124,8 @@ export default function ProductManager() {
             <p className="admin-kicker">Catalog control</p>
             <h1>Quản lý sản phẩm</h1>
             <p>
-              Màn này đã được kéo về cùng hệ UI admin mới: có hero, overview cards và
-              khu CRUD rõ ràng hơn thay vì chỉ còn bảng trần.
+              Màn này đã được đồng bộ với hệ UI admin mới: có hero, overview cards và
+              khu CRUD rõ ràng hơn thay vì chỉ còn bảng dữ liệu thô.
             </p>
           </div>
 
@@ -143,7 +144,7 @@ export default function ProductManager() {
         <article className="admin-overview-card">
           <p>Tổng SKU</p>
           <strong>{productStats.total}</strong>
-          <span>Số sản phẩm đang có trong danh sách frontend admin.</span>
+          <span>Số sản phẩm hiện có trong danh sách quản trị.</span>
         </article>
         <article className="admin-overview-card">
           <p>Đang bán</p>
@@ -153,22 +154,22 @@ export default function ProductManager() {
         <article className="admin-overview-card">
           <p>Tạm ẩn</p>
           <strong>{productStats.hidden}</strong>
-          <span>Các mục đang inactive hoặc chưa sẵn sàng đưa ra storefront.</span>
+          <span>Các mục đang inactive hoặc chưa sẵn sàng hiển thị storefront.</span>
         </article>
         <article className="admin-overview-card">
           <p>Hết hàng</p>
           <strong>{productStats.outOfStock}</strong>
-          <span>SKU cần nhập lại hoặc chuyển trạng thái hiển thị.</span>
+          <span>SKU cần nhập lại hoặc chuyển trạng thái hiển thị phù hợp.</span>
         </article>
       </section>
 
       <section className="admin-product-panel">
-        <div className="admin-surface-head">
-          <div>
-            <h2>Bộ lọc và bảng sản phẩm</h2>
-            <p>Tìm kiếm, lọc trạng thái và thực hiện CRUD trực tiếp trên bảng.</p>
+          <div className="admin-surface-head">
+            <div>
+              <h2>Bộ lọc và bảng sản phẩm</h2>
+              <p>Tìm kiếm, lọc trạng thái và thực hiện CRUD trực tiếp trên bảng.</p>
+            </div>
           </div>
-        </div>
 
         <div className="admin-product-filters">
           <label className="admin-product-search" aria-label="Tìm kiếm sản phẩm">
@@ -278,7 +279,7 @@ export default function ProductManager() {
         <div className="admin-surface-head">
           <div>
             <h2>Thông tin khách hàng gần đây</h2>
-            <p>Khối phụ để tham chiếu nhanh đơn đang phát sinh quanh catalog.</p>
+            <p>Khối phụ để tham chiếu nhanh các đơn phát sinh quanh catalog.</p>
           </div>
         </div>
 
@@ -286,7 +287,7 @@ export default function ProductManager() {
           <table className="admin-product-table admin-customer-table">
             <thead>
               <tr>
-                <th>MÃ</th>
+                <th>MA</th>
                 <th>KHÁCH</th>
                 <th>TỔNG TIỀN</th>
                 <th>TRẠNG THÁI</th>

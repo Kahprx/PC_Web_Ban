@@ -7,9 +7,10 @@ export default function Footer() {
     <footer className="site-footer">
       <div className="container mx-auto site-footer-grid">
         <section className="site-footer-brand">
-          <p className="site-footer-logo">KAH <span>Gaming Gear</span></p>
-          <p>Don vi ban le PC & Gaming Gear chinh hang.</p>
-          <p>Nhan build cau hinh theo nhu cau va ngan sach.</p>
+          <p className="site-footer-logo">KAH</p>
+          <p className="site-footer-sublogo">PC Gaming Center</p>
+          <p>Vi tri uy tin cho dan choi setup.</p>
+          <p>Ho tro build may theo nhu cau that.</p>
 
           <div className="site-footer-social" aria-label="Mang xa hoi">
             <a href="#" aria-label="Facebook">
@@ -25,24 +26,24 @@ export default function Footer() {
         </section>
 
         <section>
-          <p className="site-footer-title">HE THONG CUA HANG</p>
-          <p>Chi nhanh Q1, TP.HCM</p>
-          <p>Chi nhanh Thu Duc, TP.HCM</p>
-          <p>Chi nhanh Ha Noi</p>
+          <p className="site-footer-title">San pham</p>
+          <p>Ban phim co custom</p>
+          <p>Tai nghe IEM</p>
+          <p>Gaming Gear</p>
         </section>
 
         <section>
-          <p className="site-footer-title">HO TRO KHACH HANG</p>
-          <p>Hotline: 1900.XXXX</p>
-          <p>Email: support@kahstore.vn</p>
-          <p>08:30 - 21:00 (T2 - CN)</p>
+          <p className="site-footer-title">Ho tro</p>
+          <p>Tra cuu don hang</p>
+          <p>Tai khoan cua ban</p>
+          <p>Lien he</p>
         </section>
 
         <section>
-          <p className="site-footer-title">CHINH SACH</p>
-          <p>Giao hang nhanh noi thanh</p>
-          <p>Tra gop 0% qua the tin dung</p>
-          <p>Bao hanh 1 doi 1 theo dieu kien</p>
+          <p className="site-footer-title">Lien he</p>
+          <p>150 duong abc, Quan 1, TP.HCM</p>
+          <p>1900 1984</p>
+          <p>support@kahgaming.vn</p>
         </section>
       </div>
     </footer>

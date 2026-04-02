@@ -3,6 +3,7 @@ const httpError = require('../utils/httpError');
 const { getClient } = require('../utils/db');
 const {
   listOrders,
+  listOrdersForAdmin,
   getOrderById,
   getProductForOrder,
   createOrderRecord,
@@ -127,8 +128,10 @@ const getMyOrders = asyncHandler(async (req, res) => {
 const getAllOrdersForAdmin = asyncHandler(async (req, res) => {
   const page = toPositiveInt(req.query.page, 1);
   const limit = Math.min(50, toPositiveInt(req.query.limit, 10));
+  const search = String(req.query.search || '').trim();
+  const status = req.query.status ? String(req.query.status) : null;
 
-  const result = await listOrders({ page, limit });
+  const result = await listOrdersForAdmin({ page, limit, search, status });
 
   res.status(200).json({
     data: result.items,
