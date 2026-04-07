@@ -8,11 +8,13 @@ import Dashboard from "./pages/admin/Dashboard";
 import OrderManager from "./pages/admin/OrderManager";
 import ProductForm from "./pages/admin/ProductForm";
 import ProductManager from "./pages/admin/ProductManager";
+import SupportChatManager from "./pages/admin/SupportChatManager";
 import UserManager from "./pages/admin/UserManager";
 
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 import BuildPC from "./pages/buildpc/BuildPC";
 import Cart from "./pages/cart/Cart";
@@ -20,6 +22,11 @@ import Category from "./pages/category/Category";
 import Checkout from "./pages/checkout/Checkout";
 import Confirm from "./pages/checkout/Confirm";
 import NotFound from "./pages/common/NotFound";
+import About from "./pages/content/About";
+import Blog from "./pages/content/Blog";
+import BlogDetail from "./pages/content/BlogDetail";
+import Contact from "./pages/content/Contact";
+import PolicyWarranty from "./pages/content/PolicyWarranty";
 import Home from "./pages/home/Home";
 import OrderDetail from "./pages/order/OrderDetail";
 import OrderHistory from "./pages/order/OrderHistory";
@@ -49,31 +56,15 @@ function App() {
         <Route path="/products" element={<ProductList />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/build-pc" element={<BuildPC />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogDetail />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/policy-warranty" element={<PolicyWarranty />} />
 
-        <Route
-          path="/cart"
-          element={
-            <ProtectedRoute allowedRoles={["user"]}>
-              <Cart />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/checkout"
-          element={
-            <ProtectedRoute allowedRoles={["user"]}>
-              <Checkout />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/confirm"
-          element={
-            <ProtectedRoute allowedRoles={["user"]}>
-              <Confirm />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/confirm" element={<Confirm />} />
         <Route
           path="/profile"
           element={
@@ -111,6 +102,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
       <Route
@@ -127,6 +119,7 @@ function App() {
         <Route path="products/create" element={<ProductForm />} />
         <Route path="products/edit/:id" element={<ProductForm />} />
         <Route path="orders" element={<OrderManager />} />
+        <Route path="support-chat" element={<SupportChatManager />} />
         <Route path="users" element={<UserManager />} />
       </Route>
 

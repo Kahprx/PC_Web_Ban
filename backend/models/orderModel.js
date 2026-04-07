@@ -32,11 +32,81 @@ const listOrders = async ({ userId = null, page = 1, limit = 10 }) => {
       o.status,
       o.shipping_address,
       o.payment_method,
+      pay.payment_status,
+      pay.payment_updated_at,
       o.created_at,
       o.updated_at
      FROM orders o
      JOIN users u ON u.id = o.user_id
+     LEFT JOIN LATERAL (
+       SELECT
+         p.status AS payment_status,
+         p.updated_at AS payment_updated_at
+       FROM payments p
+       WHERE p.order_id = o.id
+       ORDER BY p.updated_at DESC NULLS LAST, p.id DESC
+       LIMIT 1
+     ) pay ON TRUE
      ${whereClause}
+     ORDER BY o.created_at DESC
+     LIMIT $${idx} OFFSET $${idx + 1}`,
+    [...values, limit, offset]
+  );
+
+  return {
+    items: result.rows,
+    total: countResult.rows[0].total,
+    page,
+    limit,
+  };
+};
+
+const listOrdersForAdmin = async ({
+  search = "",
+  status = null,
+  page = 1,
+  limit = 20,
+}) => {
+  const conditions = ["1 = 1"];
+  const values = [];
+  let idx = 1;
+
+  if (search) {
+    conditions.push(`(u.full_name ILIKE $${idx} OR u.email ILIKE $${idx} OR CAST(o.id AS TEXT) ILIKE $${idx})`);
+    values.push(`%${search}%`);
+    idx += 1;
+  }
+
+  if (status) {
+    conditions.push(`o.status = $${idx}`);
+    values.push(status);
+    idx += 1;
+  }
+
+  const countResult = await query(
+    `SELECT COUNT(*)::int AS total
+     FROM orders o
+     JOIN users u ON u.id = o.user_id
+     WHERE ${conditions.join(" AND ")}`,
+    values
+  );
+
+  const offset = (page - 1) * limit;
+  const result = await query(
+    `SELECT
+      o.id,
+      o.user_id,
+      u.full_name,
+      u.email,
+      o.total_amount,
+      o.status,
+      o.shipping_address,
+      o.payment_method,
+      o.created_at,
+      o.updated_at
+     FROM orders o
+     JOIN users u ON u.id = o.user_id
+     WHERE ${conditions.join(" AND ")}
      ORDER BY o.created_at DESC
      LIMIT $${idx} OFFSET $${idx + 1}`,
     [...values, limit, offset]
@@ -67,9 +137,20 @@ const getOrderById = async (orderId, userId = null) => {
       o.status,
       o.shipping_address,
       o.payment_method,
+      pay.payment_status,
+      pay.payment_updated_at,
       o.created_at,
       o.updated_at
      FROM orders o
+     LEFT JOIN LATERAL (
+       SELECT
+         p.status AS payment_status,
+         p.updated_at AS payment_updated_at
+       FROM payments p
+       WHERE p.order_id = o.id
+       ORDER BY p.updated_at DESC NULLS LAST, p.id DESC
+       LIMIT 1
+     ) pay ON TRUE
      ${where}
      LIMIT 1`,
     values
@@ -144,6 +225,18 @@ const decreaseProductStock = async (client, { productId, quantity }) => {
   );
 };
 
+const updateOrderStatus = async (orderId, status) => {
+  const result = await query(
+    `UPDATE orders
+     SET status = $2
+     WHERE id = $1
+     RETURNING id, user_id, total_amount, status, shipping_address, payment_method, created_at, updated_at`,
+    [orderId, status]
+  );
+
+  return result.rows[0] || null;
+};
+
 const getOrderStatistics = async () => {
   const overviewResult = await query(
     `SELECT
@@ -170,12 +263,43 @@ const getOrderStatistics = async () => {
   };
 };
 
+const getRecentPurchasedItems = async ({ userId, limit = 12 }) => {
+  const safeLimit = Number.isFinite(Number(limit)) ? Number(limit) : 12;
+  const normalizedLimit = Math.min(50, Math.max(1, safeLimit));
+
+  const result = await query(
+    `SELECT
+      oi.id,
+      oi.order_id,
+      oi.product_id,
+      p.name AS product_name,
+      p.image_url,
+      oi.quantity,
+      oi.unit_price,
+      oi.line_total,
+      o.status AS order_status,
+      o.created_at AS order_created_at
+     FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     JOIN products p ON p.id = oi.product_id
+     WHERE o.user_id = $1
+     ORDER BY o.created_at DESC, oi.id DESC
+     LIMIT $2`,
+    [userId, normalizedLimit]
+  );
+
+  return result.rows;
+};
+
 module.exports = {
   listOrders,
+  listOrdersForAdmin,
   getOrderById,
   getProductForOrder,
   createOrderRecord,
   createOrderItemRecord,
   decreaseProductStock,
+  updateOrderStatus,
   getOrderStatistics,
+  getRecentPurchasedItems,
 };

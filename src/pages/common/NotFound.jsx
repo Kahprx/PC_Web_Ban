@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import "./NotFound.css";
 
 const quickLinks = [
-  { label: "Ve trang chu", href: "/user" },
-  { label: "Xem san pham", href: "/products" },
+  { label: "Về trang chủ", href: "/user" },
+  { label: "Xem sản phẩm", href: "/products" },
   { label: "Build PC", href: "/build-pc" },
 ];
 
@@ -13,10 +13,9 @@ export default function NotFound() {
       <div className="notfound-shell">
         <article className="notfound-card">
           <p className="notfound-kicker">404</p>
-          <h1>Trang ban tim hien khong ton tai trong route hien tai.</h1>
+          <h1>Trang bạn tìm hiện không tồn tại.</h1>
           <p className="notfound-lead">
-            Toi da doi trang not found tu mot card co ban thanh mot man fallback co
-            hierarchy, giai thich va lo trinh quay lai app.
+            Màn 404 đã được rút gọn, rõ thông tin và có lối quay lại nhanh để không gián đoạn trải nghiệm.
           </p>
 
           <div className="notfound-badge-row">
@@ -35,8 +34,8 @@ export default function NotFound() {
         </article>
 
         <aside className="notfound-panel">
-          <p className="notfound-kicker">Goi y</p>
-          <h2>Thu cac diem vao chinh</h2>
+          <p className="notfound-kicker">Gợi ý</p>
+          <h2>Điểm vào chính</h2>
 
           <div className="notfound-list">
             <div>
@@ -45,11 +44,11 @@ export default function NotFound() {
             </div>
             <div>
               <strong>/products</strong>
-              <span>Danh sach san pham va filter.</span>
+              <span>Danh sách sản phẩm và bộ lọc.</span>
             </div>
             <div>
               <strong>/build-pc</strong>
-              <span>Workspace build PC da duoc lam lai UI.</span>
+              <span>Workspace build PC.</span>
             </div>
           </div>
         </aside>

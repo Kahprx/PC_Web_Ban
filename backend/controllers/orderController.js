@@ -1,14 +1,34 @@
 ﻿const asyncHandler = require('../utils/asyncHandler');
 const httpError = require('../utils/httpError');
 const { getClient } = require('../utils/db');
+const paymentModel = require('../models/paymentModel');
 const {
   listOrders,
+  listOrdersForAdmin,
   getOrderById,
   getProductForOrder,
   createOrderRecord,
   createOrderItemRecord,
   decreaseProductStock,
+  getRecentPurchasedItems,
 } = require('../models/orderModel');
+const { findUserById } = require('../models/userModel');
+
+const ONLINE_PAYMENT_METHODS = new Set(['momo', 'banking', 'card', 'installment']);
+const WARRANTY_RULES = [
+  {
+    months: 36,
+    keywords: ['cpu', 'mainboard', 'motherboard', 'vga', 'gpu', 'card màn hình', 'card man hinh'],
+  },
+  {
+    months: 24,
+    keywords: ['ram', 'ssd', 'hdd', 'psu', 'nguồn', 'nguon', 'case', 'tản nhiệt', 'tan nhiet', 'màn hình', 'man hinh', 'monitor'],
+  },
+  {
+    months: 12,
+    keywords: ['chuột', 'chuot', 'bàn phím', 'ban phim', 'tai nghe', 'gear', 'pad', 'ghế', 'ghe', 'bàn gaming', 'ban gaming'],
+  },
+];
 
 const toPositiveInt = (value, fallback) => {
   const parsed = Number.parseInt(value, 10);
@@ -16,8 +36,43 @@ const toPositiveInt = (value, fallback) => {
   return parsed;
 };
 
+const normalizeText = (value = '') =>
+  String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+const resolveWarrantyMonths = (name = '') => {
+  const normalized = normalizeText(name);
+  for (const rule of WARRANTY_RULES) {
+    if (rule.keywords.some((keyword) => normalized.includes(normalizeText(keyword)))) {
+      return rule.months;
+    }
+  }
+  return 24;
+};
+
+const addMonths = (baseDate, months) => {
+  const date = new Date(baseDate);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setMonth(date.getMonth() + months);
+  return date;
+};
+
+const parseOrderCodeToId = (rawCode = '') => {
+  const safe = String(rawCode || '').trim();
+  if (!safe) return 0;
+
+  const direct = Number(safe);
+  if (Number.isFinite(direct) && direct > 0) return Math.trunc(direct);
+
+  const matched = safe.match(/(\d{1,12})/);
+  return matched?.[1] ? Number(matched[1]) : 0;
+};
+
 const createOrder = asyncHandler(async (req, res) => {
   const { items, shippingAddress, paymentMethod = 'cod' } = req.body || {};
+  const normalizedPaymentMethod = String(paymentMethod || 'cod').trim().toLowerCase();
 
   if (!Array.isArray(items) || items.length === 0) {
     throw httpError(400, 'items phải là mảng và không rỗng');
@@ -69,7 +124,7 @@ const createOrder = asyncHandler(async (req, res) => {
       userId: req.user.id,
       totalAmount,
       shippingAddress: String(shippingAddress),
-      paymentMethod: String(paymentMethod),
+      paymentMethod: normalizedPaymentMethod,
     });
 
     for (const item of normalizedItems) {
@@ -85,6 +140,17 @@ const createOrder = asyncHandler(async (req, res) => {
         productId: item.productId,
         quantity: item.quantity,
       });
+    }
+
+    if (ONLINE_PAYMENT_METHODS.has(normalizedPaymentMethod)) {
+      await paymentModel.createPayment(
+        {
+          orderId: order.id,
+          method: normalizedPaymentMethod,
+          status: 'pending',
+        },
+        client
+      );
     }
 
     await client.query('COMMIT');
@@ -127,8 +193,10 @@ const getMyOrders = asyncHandler(async (req, res) => {
 const getAllOrdersForAdmin = asyncHandler(async (req, res) => {
   const page = toPositiveInt(req.query.page, 1);
   const limit = Math.min(50, toPositiveInt(req.query.limit, 10));
+  const search = String(req.query.search || '').trim();
+  const status = req.query.status ? String(req.query.status) : null;
 
-  const result = await listOrders({ page, limit });
+  const result = await listOrdersForAdmin({ page, limit, search, status });
 
   res.status(200).json({
     data: result.items,
@@ -141,8 +209,100 @@ const getAllOrdersForAdmin = asyncHandler(async (req, res) => {
   });
 });
 
+const getMyPurchasedItems = asyncHandler(async (req, res) => {
+  const limit = Math.min(50, toPositiveInt(req.query.limit, 12));
+
+  const items = await getRecentPurchasedItems({
+    userId: req.user.id,
+    limit,
+  });
+
+  res.status(200).json({
+    data: items,
+  });
+});
+
+const getMyOrderDetail = asyncHandler(async (req, res) => {
+  const orderId = Number(req.params.orderId);
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    throw httpError(400, 'orderId không hợp lệ');
+  }
+
+  const scopedUserId = req.user.role === 'admin' ? null : req.user.id;
+  const order = await getOrderById(orderId, scopedUserId);
+  if (!order) {
+    throw httpError(404, 'Không tìm thấy đơn hàng');
+  }
+
+  res.status(200).json({
+    data: order,
+  });
+});
+
+const getWarrantyByOrderCode = asyncHandler(async (req, res) => {
+  const orderId = parseOrderCodeToId(req.params.orderCode);
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    throw httpError(400, 'Mã đơn hàng không hợp lệ');
+  }
+
+  const order = await getOrderById(orderId, null);
+  if (!order) {
+    throw httpError(404, 'Không tìm thấy đơn hàng');
+  }
+
+  const user = await findUserById(order.user_id);
+  const orderedAt = new Date(order.created_at);
+  const now = Date.now();
+
+  const warrantyItems = (order.items || []).map((item) => {
+    const months = resolveWarrantyMonths(item.product_name);
+    const expiredAt = addMonths(orderedAt, months);
+    const expiredAtTs = expiredAt ? expiredAt.getTime() : 0;
+    const inWarranty = expiredAtTs > now;
+    const remainDays = inWarranty ? Math.ceil((expiredAtTs - now) / (1000 * 60 * 60 * 24)) : 0;
+
+    return {
+      orderItemId: item.id,
+      productId: item.product_id,
+      productName: item.product_name,
+      quantity: item.quantity,
+      warrantyMonths: months,
+      warrantyUntil: expiredAt ? expiredAt.toISOString() : null,
+      inWarranty,
+      remainingDays: remainDays,
+    };
+  });
+
+  const activeCount = warrantyItems.filter((item) => item.inWarranty).length;
+
+  res.status(200).json({
+    data: {
+      orderId: order.id,
+      orderCode: `ORDER-${order.id}`,
+      orderStatus: order.status,
+      orderedAt: order.created_at,
+      customer: user
+        ? {
+            id: user.id,
+            fullName: user.full_name,
+            email: user.email,
+          }
+        : null,
+      items: warrantyItems,
+      summary: {
+        totalItems: warrantyItems.length,
+        activeWarrantyItems: activeCount,
+        expiredWarrantyItems: Math.max(0, warrantyItems.length - activeCount),
+      },
+    },
+  });
+});
+
 module.exports = {
   createOrder,
   getMyOrders,
   getAllOrdersForAdmin,
+  getMyPurchasedItems,
+  getMyOrderDetail,
+  getWarrantyByOrderCode,
 };

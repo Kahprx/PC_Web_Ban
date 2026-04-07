@@ -1,94 +1,104 @@
-import { Link } from "react-router-dom";
-import { formatCurrency, products } from "../../data/storeData";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { clearCartApi, fetchCart } from "../../services/cartService";
+import { createOrder } from "../../services/orderService";
+import { createOrderPayment } from "../../services/paymentService";
+import { updateProfileApi } from "../../services/authService";
+import { toAbsoluteImageUrl } from "../../services/productService";
+import { formatVnd } from "../../utils/currency";
+import { notifyError, notifySuccess } from "../../utils/notify";
+import { PAYMENT_METHOD_OPTIONS, PAYMENT_METHOD_VALUES } from "../../utils/payment";
 import "../shared/PageBlocks.css";
 
-const selectedItems = products.slice(0, 3).map((item, index) => ({
-  ...item,
-  qty: index === 0 ? 1 : 1,
-}));
+const DEFAULT_PRODUCT_IMAGE = "/vite.svg";
+const ONLINE_PAYMENT_METHODS = new Set(["momo", "banking", "card", "installment"]);
 
-const deliveryOptions = [
-  {
-    id: "express",
-    title: "Giao nhanh noi thanh",
-    fee: 0,
-    note: "Du kien 2 - 4 gio, uu tien cho don hang da xac nhan.",
-    active: true,
-  },
-  {
-    id: "standard",
-    title: "Giao tieu chuan",
-    fee: 35_000,
-    note: "Nhan hang trong 1 - 3 ngay, phu hop don lien tinh.",
-    active: false,
-  },
-];
+const toSafeImage = (value) => {
+  const raw = String(value || "").trim();
+  return toAbsoluteImageUrl(raw) || DEFAULT_PRODUCT_IMAGE;
+};
 
-const paymentOptions = [
-  {
-    id: "cod",
-    title: "Thanh toan khi nhan hang",
-    note: "Nhan vien se xac nhan lai truoc khi giao.",
-    active: true,
-  },
-  {
-    id: "banking",
-    title: "Chuyen khoan ngan hang",
-    note: "Gui bien lai de doi CSKH giu hang som hon.",
-    active: false,
-  },
-  {
-    id: "installment",
-    title: "Tra gop / the tin dung",
-    note: "Can doi soat them thong tin va ngan hang ho tro.",
-    active: false,
-  },
-];
+const CheckoutSchema = Yup.object({
+  fullName: Yup.string().trim().min(2, "Họ tên phải có ít nhất 2 ký tự").required("Vui lòng nhập họ tên"),
+  phone: Yup.string()
+    .trim()
+    .matches(/^(0|\+84)[0-9]{9,10}$/, "Số điện thoại không hợp lệ")
+    .required("Vui lòng nhập số điện thoại"),
+  email: Yup.string().trim().email("Email không hợp lệ").required("Vui lòng nhập email"),
+  shippingAddress: Yup.string()
+    .trim()
+    .min(10, "Địa chỉ nhận hàng cần ít nhất 10 ký tự")
+    .required("Vui lòng nhập địa chỉ nhận hàng"),
+  paymentMethod: Yup.string().oneOf(PAYMENT_METHOD_VALUES).required("Vui lòng chọn phương thức thanh toán"),
+});
+
+const mapApiCartItems = (items = []) =>
+  items.map((item) => ({
+    id: item.id ?? item.cart_item_id ?? item.product_id,
+    productId: item.product_id ?? item.productId ?? item.id,
+    name: item.product_name ?? item.name ?? `Sản phẩm #${item.product_id || ""}`,
+    image: toSafeImage(item.image_url || item.image || ""),
+    price: Number(item.price ?? item.unit_price ?? 0),
+    qty: Number(item.quantity ?? item.qty ?? 1),
+  }));
 
 export default function Checkout() {
-  const subtotal = selectedItems.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shippingFee = deliveryOptions[0].fee;
+  const navigate = useNavigate();
+  const { token, session, refreshProfile } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const isGuest = !token;
+
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchCart(token);
+        setItems(mapApiCartItems(data));
+      } catch (error) {
+        notifyError(error, "Không thể tải giỏ hàng");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCart();
+  }, [token]);
+
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0),
+    [items]
+  );
+  const shippingFee = subtotal >= 30_000_000 ? 0 : items.length > 0 ? 45_000 : 0;
   const total = subtotal + shippingFee;
+
+  const orderItems = items.map((item) => ({
+    productId: item.productId,
+    quantity: item.qty,
+  }));
 
   return (
     <div className="page-shell">
       <section className="page-hero-card">
         <div className="page-hero-copy">
-          <p className="page-eyebrow">Checkout workspace</p>
-          <h1 className="page-title">Chot don hang tren mot man hinh de theo doi.</h1>
+          <p className="page-eyebrow">Checkout Workspace</p>
+          <h1 className="page-title">Xác nhận thông tin và đặt hàng.</h1>
           <p className="page-subtitle">
-            Trang thanh toan da duoc doi sang bo cuc ro tung khoi: thong tin nhan
-            hang, lua chon giao nhan, phuong thuc thanh toan va tong don o cot ben
-            phai de de ra quyet dinh hon.
+            {isGuest
+              ? "Bạn đang checkout ở chế độ khách. Với thanh toán online, vui lòng đăng nhập để hệ thống nhận callback ngân hàng chính xác."
+              : "Đơn hàng sẽ đồng bộ qua backend API và cập nhật trạng thái thanh toán theo thời gian thực."}
           </p>
 
           <div className="page-hero-actions">
-            <span className="page-inline-code">Checkout demo</span>
+            <span className="page-inline-code">{isGuest ? "Guest checkout" : "Checkout API"}</span>
             <Link to="/cart" className="page-btn-outline">
-              Quay lai gio hang
+              Quay lại giỏ hàng
             </Link>
           </div>
         </div>
-      </section>
-
-      <section className="page-highlight-grid">
-        <article className="page-highlight-card">
-          <p>Don hien tai</p>
-          <strong>{selectedItems.length} san pham</strong>
-          <span>Da gom cac mon chinh trong cau hinh va gear phu tro.</span>
-        </article>
-
-        <article className="page-highlight-card">
-          <p>Van chuyen</p>
-          <strong>{shippingFee === 0 ? "Free ship" : formatCurrency(shippingFee)}</strong>
-          <span>Uu tien giao nhanh cho don hang noi thanh da xac nhan.</span>
-        </article>
-
-        <article className="page-highlight-card">
-          <p>Tong can thanh toan</p>
-          <strong>{formatCurrency(total)}</strong>
-          <span>Gia hien thi theo UI demo, chua tinh khuyen mai he thong.</span>
-        </article>
       </section>
 
       <section className="page-layout-2-1">
@@ -96,102 +106,191 @@ export default function Checkout() {
           <section className="page-panel">
             <div className="page-panel-header">
               <div>
-                <p className="page-panel-kicker">Shipping profile</p>
-                <h2>Thong tin nhan hang</h2>
+                <p className="page-panel-kicker">Shipping Profile</p>
+                <h2>Thông tin nhận hàng</h2>
               </div>
-              <span className="page-inline-code">Buoc 1</span>
             </div>
 
-            <form className="page-form" onSubmit={(event) => event.preventDefault()}>
-              <div className="page-form-grid">
-                <div className="page-field">
-                  <label>Họ và tên</label>
-                  <input type="text" placeholder="Nguyễn Văn A" defaultValue="Nguyễn Văn A" />
-                </div>
+            <Formik
+              initialValues={{
+                fullName: session?.name || "",
+                phone: session?.phone || "",
+                email: session?.email || "",
+                shippingAddress: session?.defaultShippingAddress || "",
+                paymentMethod: "cod",
+              }}
+              validationSchema={CheckoutSchema}
+              onSubmit={async (values, { setSubmitting }) => {
+                try {
+                  if (orderItems.length === 0) {
+                    throw new Error("Giỏ hàng đang trống");
+                  }
 
-                <div className="page-field">
-                  <label>Số điện thoại</label>
-                  <input type="text" placeholder="09xxxxxxxx" defaultValue="0901 234 567" />
-                </div>
+                  const shippingAddress = `${values.fullName} - ${values.phone} - ${values.shippingAddress}`;
+                  const paymentMethod = String(values.paymentMethod || "cod").toLowerCase();
+                  const isOnlinePayment = ONLINE_PAYMENT_METHODS.has(paymentMethod);
 
-                <div className="page-field">
-                  <label>Email liên hệ</label>
-                  <input type="email" placeholder="you@example.com" defaultValue="you@example.com" />
-                </div>
+                  if (!token && isOnlinePayment) {
+                    throw new Error("Thanh toán online cần đăng nhập để hệ thống xác nhận giao dịch từ ngân hàng.");
+                  }
 
-                <div className="page-field">
-                  <label>Khung giờ nhận hàng</label>
-                  <select defaultValue="18-21">
-                    <option value="9-12">09:00 - 12:00</option>
-                    <option value="14-18">14:00 - 18:00</option>
-                    <option value="18-21">18:00 - 21:00</option>
-                  </select>
-                </div>
+                  if (!token) {
+                    const localOrder = {
+                      id: `GUEST-${Date.now()}`,
+                      total_amount: total,
+                      payment_method: paymentMethod,
+                      payment_status: "cod_confirmed",
+                      status: "processing",
+                      shipping_address: shippingAddress,
+                      items: items.map((item, index) => ({
+                        id: `guest-item-${index + 1}`,
+                        product_id: item.productId,
+                        product_name: item.name,
+                        image_url: item.image,
+                        quantity: item.qty,
+                        unit_price: Number(item.price || 0),
+                        line_total: Number(item.price || 0) * Number(item.qty || 0),
+                      })),
+                    };
 
-                <div className="page-field full">
-                  <label>Địa chỉ nhận hàng</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Số nhà, đường, quận/huyện, tỉnh/thành"
-                    defaultValue="12 Đặng Văn Ngữ, Phường 10, Quận Phú Nhuận, TP.HCM"
-                  />
-                </div>
+                    await clearCartApi();
+                    setItems([]);
+                    notifySuccess("Đặt hàng thành công (khách)");
+                    navigate(`/confirm?orderId=${encodeURIComponent(localOrder.id)}`, {
+                      replace: true,
+                      state: { order: localOrder },
+                    });
+                    return;
+                  }
 
-                <div className="page-field full">
-                  <label>Ghi chú cho cửa hàng</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Ví dụ: gọi trước khi giao, xuất hóa đơn, kiểm tra máy..."
-                    defaultValue="Gọi trước khi giao 15 phút. Ưu tiên giao sau 18h."
-                  />
-                </div>
-              </div>
-            </form>
-          </section>
+                  try {
+                    await updateProfileApi(
+                      {
+                        fullName: values.fullName,
+                        email: values.email,
+                        phone: values.phone,
+                        defaultShippingAddress: values.shippingAddress,
+                      },
+                      token
+                    );
+                    await refreshProfile();
+                  } catch (profileError) {
+                    notifyError(profileError, "Không thể lưu hồ sơ, hệ thống vẫn tiếp tục tạo đơn");
+                  }
 
-          <section className="page-panel">
-            <div className="page-panel-header">
-              <div>
-                <p className="page-panel-kicker">Delivery</p>
-                <h2>Lua chon giao nhan</h2>
-              </div>
-              <span className="page-inline-code">Buoc 2</span>
-            </div>
+                  const result = await createOrder(
+                    {
+                      items: orderItems,
+                      shippingAddress,
+                      paymentMethod,
+                    },
+                    token
+                  );
 
-            <div className="page-option-grid">
-              {deliveryOptions.map((option) => (
-                <article
-                  key={option.id}
-                  className={`page-option-card ${option.active ? "is-active" : ""}`}
-                >
-                  <p>{option.title}</p>
-                  <strong>{option.fee === 0 ? "Free" : formatCurrency(option.fee)}</strong>
-                  <span>{option.note}</span>
-                </article>
-              ))}
-            </div>
-          </section>
+                  const orderFromApi = result?.data || null;
 
-          <section className="page-panel">
-            <div className="page-panel-header">
-              <div>
-                <p className="page-panel-kicker">Payment</p>
-                <h2>Phuong thuc thanh toan</h2>
-              </div>
-              <span className="page-inline-code">Buoc 3</span>
-            </div>
+                  if (orderFromApi?.id && isOnlinePayment) {
+                    try {
+                      await createOrderPayment(
+                        {
+                          orderId: orderFromApi.id,
+                          method: paymentMethod,
+                        },
+                        token
+                      );
+                    } catch {
+                      // Bỏ qua lỗi tạo payment pending nếu đã tồn tại.
+                    }
+                  }
 
-            <div className="page-stack">
-              {paymentOptions.map((option) => (
-                <article
-                  key={option.id}
-                  className={`page-option-card ${option.active ? "is-active" : ""}`}
-                >
-                  <p>{option.title}</p>
-                  <span>{option.note}</span>
-                </article>
-              ))}
-            </div>
+                  await clearCartApi(token);
+                  setItems([]);
+                  notifySuccess("Đã tạo đơn hàng thành công");
+                  navigate(`/confirm?orderId=${encodeURIComponent(orderFromApi?.id || "")}`, {
+                    replace: true,
+                    state: {
+                      order: orderFromApi,
+                    },
+                  });
+                } catch (error) {
+                  notifyError(error, "Đặt hàng thất bại");
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {({ isSubmitting, values, setFieldValue }) => (
+                <Form className="page-form">
+                  <div className="page-form-grid">
+                    <div className="page-field">
+                      <label>Họ và tên</label>
+                      <Field name="fullName" type="text" placeholder="Nguyễn Văn A" />
+                      <ErrorMessage name="fullName" component="div" className="auth-note is-error" />
+                    </div>
+
+                    <div className="page-field">
+                      <label>Số điện thoại</label>
+                      <Field name="phone" type="text" placeholder="09xxxxxxxx" />
+                      <ErrorMessage name="phone" component="div" className="auth-note is-error" />
+                    </div>
+
+                    <div className="page-field">
+                      <label>Email liên hệ</label>
+                      <Field name="email" type="email" placeholder="you@example.com" />
+                      <ErrorMessage name="email" component="div" className="auth-note is-error" />
+                    </div>
+
+                    <div className="page-field full">
+                      <label>Thanh toán</label>
+                      <div className="page-payment-grid">
+                        {PAYMENT_METHOD_OPTIONS.map((method) => {
+                          const disabledForGuest = isGuest && method.value !== "cod";
+                          return (
+                            <label
+                              key={method.value}
+                              className={`page-payment-option ${values.paymentMethod === method.value ? "is-active" : ""}`}
+                              style={disabledForGuest ? { opacity: 0.55, cursor: "not-allowed" } : undefined}
+                            >
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value={method.value}
+                                checked={values.paymentMethod === method.value}
+                                onChange={() => {
+                                  if (!disabledForGuest) {
+                                    setFieldValue("paymentMethod", method.value);
+                                  }
+                                }}
+                                disabled={disabledForGuest}
+                              />
+                              <span>{method.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {isGuest ? (
+                        <p style={{ margin: 0, fontSize: "12px", color: "#8a5b12" }}>
+                          Thanh toán online chỉ mở cho tài khoản đăng nhập để nhận callback ngân hàng tự động.
+                        </p>
+                      ) : null}
+                      <ErrorMessage name="paymentMethod" component="div" className="auth-note is-error" />
+                    </div>
+
+                    <div className="page-field full">
+                      <label>Địa chỉ nhận hàng</label>
+                      <Field as="textarea" rows={3} name="shippingAddress" placeholder="Số nhà, quận/huyện, tỉnh/thành" />
+                      <ErrorMessage name="shippingAddress" component="div" className="auth-note is-error" />
+                    </div>
+                  </div>
+
+                  <div className="page-actions" style={{ marginTop: "14px" }}>
+                    <button type="submit" className="page-btn" disabled={isSubmitting || loading || items.length === 0}>
+                      {isSubmitting ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐẶT HÀNG"}
+                    </button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
           </section>
         </div>
 
@@ -199,27 +298,34 @@ export default function Checkout() {
           <section className="page-summary-card">
             <div className="page-panel-header">
               <div>
-                <p className="page-panel-kicker">Order summary</p>
-                <h2>Don hang</h2>
+                <p className="page-panel-kicker">Order Summary</p>
+                <h2>Đơn hàng</h2>
               </div>
-              <span className="page-inline-code">Buoc 4</span>
             </div>
 
+            {loading ? <p>Đang tải giỏ hàng...</p> : null}
+
             <div className="page-item-list" style={{ marginTop: "14px" }}>
-              {selectedItems.map((item) => (
+              {items.map((item) => (
                 <article key={item.id} className="page-item-row">
                   <div className="page-item-thumb">
-                    <img src={item.image} alt={item.name} />
+                    <img
+                      src={item.image || DEFAULT_PRODUCT_IMAGE}
+                      alt={item.name}
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = DEFAULT_PRODUCT_IMAGE;
+                      }}
+                    />
                   </div>
 
-                  <div>
+                  <div className="page-item-main">
                     <h3>{item.name}</h3>
-                    <p>{item.specs.cpu} | {item.specs.vga}</p>
+                    <p>Số lượng: {item.qty}</p>
                   </div>
 
                   <div className="page-item-side">
-                    <strong>{formatCurrency(item.price * item.qty)}</strong>
-                    <span>SL {item.qty}</span>
+                    <strong>{formatVnd(item.price * item.qty)}</strong>
                   </div>
                 </article>
               ))}
@@ -227,50 +333,18 @@ export default function Checkout() {
 
             <div className="page-summary-list" style={{ marginTop: "14px" }}>
               <div className="page-summary-line">
-                <p>Tam tinh</p>
-                <span>{formatCurrency(subtotal)}</span>
+                <p>Tạm tính</p>
+                <span>{formatVnd(subtotal)}</span>
               </div>
               <div className="page-summary-line">
-                <p>Van chuyen</p>
-                <span>{shippingFee === 0 ? "Mien phi" : formatCurrency(shippingFee)}</span>
-              </div>
-              <div className="page-summary-line">
-                <p>Khuyen mai tam tinh</p>
-                <span>Se cap nhat sau</span>
+                <p>Vận chuyển</p>
+                <span>{shippingFee === 0 ? "Miễn phí" : formatVnd(shippingFee)}</span>
               </div>
             </div>
 
             <div className="page-summary-total">
-              <p>Tong thanh toan</p>
-              <strong>{formatCurrency(total)}</strong>
-              <span>
-                Don hang se duoc goi xac nhan truoc khi khoi tao phieu giao.
-              </span>
-            </div>
-
-            <div className="page-actions" style={{ marginTop: "12px" }}>
-              <Link to="/confirm" className="page-btn">
-                XÁC NHẬN ĐẶT HÀNG
-              </Link>
-              <Link to="/products" className="page-btn-outline">
-                Thêm sản phẩm khác
-              </Link>
-            </div>
-          </section>
-
-          <section className="page-support-card">
-            <h2 className="page-title">Can xac nhan nhanh?</h2>
-            <p className="page-subtitle">
-              Goi hotline de khoa hang, doi dia chi hoac xac nhan xuat hoa don cho don nay.
-            </p>
-
-            <div className="page-actions" style={{ marginTop: "14px" }}>
-              <button type="button" className="page-btn">
-                Hotline 1900.XXXX
-              </button>
-              <button type="button" className="page-btn-outline">
-                Chat voi CSKH
-              </button>
+              <p>Tổng thanh toán</p>
+              <strong>{formatVnd(total)}</strong>
             </div>
           </section>
         </aside>

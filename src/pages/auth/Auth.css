@@ -25,9 +25,9 @@
   background:
     radial-gradient(circle at top right, rgba(181, 84, 44, 0.16), transparent 28%),
     linear-gradient(160deg, #fffdfa, #f5ebdf);
-  padding: 26px;
+  padding: 28px;
   display: grid;
-  gap: 16px;
+  gap: 14px;
   box-shadow: 0 18px 38px rgba(84, 57, 33, 0.08);
 }
 
@@ -59,17 +59,18 @@
 }
 
 .auth-showcase h1 {
-  font-size: clamp(30px, 5vw, 48px);
-  line-height: 0.98;
-  letter-spacing: -0.05em;
-  max-width: 540px;
+  font-size: clamp(34px, 5vw, 52px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  max-width: 620px;
+  text-wrap: balance;
 }
 
 .auth-lead {
   margin: 0;
   max-width: 620px;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.62;
   color: #6e5d4c;
 }
 
@@ -103,8 +104,16 @@
   z-index: 1;
   border: 1px solid #e4d6c7;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.76);
-  padding: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 15px 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.auth-feature-card:hover,
+.auth-credential-card:hover {
+  transform: translateY(-1px);
+  border-color: #d4bfaa;
+  box-shadow: 0 10px 22px rgba(92, 62, 36, 0.08);
 }
 
 .auth-feature-card strong,
@@ -118,8 +127,8 @@
 .auth-credential-card p,
 .auth-credential-card span {
   margin: 6px 0 0;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.55;
   color: #6b5b4a;
 }
 
@@ -154,8 +163,8 @@
 .auth-card {
   border: 1px solid #dccfbe;
   border-radius: 28px;
-  background: #fff;
-  padding: 24px;
+  background: linear-gradient(180deg, #fff, #fdfbf7);
+  padding: 24px 24px 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -168,14 +177,14 @@
 }
 
 .auth-card h2 {
-  font-size: clamp(24px, 3vw, 32px);
-  line-height: 0.98;
-  letter-spacing: -0.04em;
+  font-size: clamp(27px, 3vw, 34px);
+  line-height: 1.03;
+  letter-spacing: -0.02em;
 }
 
 .auth-card p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   color: #615140;
 }
@@ -191,7 +200,7 @@
 }
 
 .auth-field label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #4c3d2f;
 }
@@ -201,7 +210,7 @@
   border: 1px solid #d8c6b2;
   border-radius: 14px;
   padding: 12px 13px;
-  font-size: 13px;
+  font-size: 14px;
   background: #faf7f2;
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
@@ -219,10 +228,10 @@
   border-radius: 999px;
   background: linear-gradient(160deg, #c58a59, #a44927);
   color: #fff;
-  padding: 11px 14px;
-  font-size: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   box-shadow: 0 16px 28px rgba(181, 84, 44, 0.18);
 }
 
@@ -235,7 +244,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font-size: 12px;
+  font-size: 13px;
   flex-wrap: wrap;
 }
 
@@ -254,7 +263,7 @@
   border-radius: 14px;
   background: #fbf6ef;
   padding: 11px 12px;
-  font-size: 12px;
+  font-size: 13px;
   color: #584534;
   line-height: 1.6;
 }
@@ -292,6 +301,6 @@
   }
 
   .auth-showcase h1 {
-    font-size: 34px;
+    font-size: 32px;
   }
 }

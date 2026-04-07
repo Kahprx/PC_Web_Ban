@@ -1,5 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
 import { useAuth } from "../../context/AuthContext";
 import {
   createProduct,
@@ -9,7 +11,18 @@ import {
   updateProduct,
   uploadProductImage,
 } from "../../services/productService";
+import { notifyError, notifySuccess } from "../../utils/notify";
 import "./AdminPages.css";
+
+const ProductSchema = Yup.object({
+  name: Yup.string().trim().min(3, "Tên tối thiểu 3 ký tự").required("Tên sản phẩm là bắt buộc"),
+  categoryId: Yup.string().required("Danh mục là bắt buộc"),
+  price: Yup.number().min(0, "Giá phải >= 0").required("Giá là bắt buộc"),
+  stockQty: Yup.number().min(0, "Tồn kho phải >= 0").required("Tồn kho là bắt buộc"),
+  status: Yup.string().oneOf(["active", "inactive"]).required("Trạng thái là bắt buộc"),
+  imageUrl: Yup.string().trim().required("URL ảnh là bắt buộc"),
+  description: Yup.string().trim().min(10, "Mô tả tối thiểu 10 ký tự").required("Mô tả là bắt buộc"),
+});
 
 const initialForm = {
   name: "",
@@ -25,52 +38,17 @@ export default function ProductForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { token } = useAuth();
-
   const isEditMode = useMemo(() => Boolean(id), [id]);
 
-  const [form, setForm] = useState(initialForm);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
-
-  const formStats = useMemo(
-    () => [
-      {
-        label: "Che do",
-        value: isEditMode ? "Edit" : "Create",
-        note: isEditMode ? "Dang cap nhat SKU ton tai." : "Dang tao SKU moi cho catalog.",
-      },
-      {
-        label: "Danh muc",
-        value: categories.length,
-        note: "So danh muc backend dang co san de map san pham.",
-      },
-      {
-        label: "Upload",
-        value: uploading ? "Dang xu ly" : "San sang",
-        note: "Anh co the upload len backend hoac nhap URL truc tiep.",
-      },
-      {
-        label: "Quyen CRUD",
-        value: token ? "Admin auth" : "Can dang nhap",
-        note: "Form nay yeu cau token backend de luu thay doi that.",
-      },
-    ],
-    [categories.length, isEditMode, token, uploading]
-  );
+  const [initialValues, setInitialValues] = useState(initialForm);
 
   useEffect(() => {
-    const loadBase = async () => {
-      try {
-        const categoryData = await fetchCategories();
-        setCategories(categoryData);
-      } catch (err) {
-        setError(err?.message || "Không tải được danh mục.");
-      }
-    };
-
-    loadBase();
+    fetchCategories()
+      .then(setCategories)
+      .catch((error) => notifyError(error, "Không tải được danh mục"));
   }, []);
 
   useEffect(() => {
@@ -79,16 +57,14 @@ export default function ProductForm() {
     const loadProduct = async () => {
       try {
         setLoading(true);
-        setError("");
-
         const product = await fetchProductById(id);
 
         if (!product) {
-          setError("Không tìm thấy sản phẩm để chỉnh sửa.");
+          notifyError("Không tìm thấy sản phẩm");
           return;
         }
 
-        setForm({
+        setInitialValues({
           name: product.name || "",
           categoryId: String(product.category_id || ""),
           price: String(product.price || ""),
@@ -97,8 +73,8 @@ export default function ProductForm() {
           imageUrl: product.image_url || "",
           description: product.description || "",
         });
-      } catch (err) {
-        setError(err?.message || "Không tải được thông tin sản phẩm.");
+      } catch (error) {
+        notifyError(error, "Không tải được thông tin sản phẩm");
       } finally {
         setLoading(false);
       }
@@ -107,83 +83,15 @@ export default function ProductForm() {
     loadProduct();
   }, [id, isEditMode]);
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleUploadImage = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!token) {
-      setError("Bạn cần đăng nhập admin backend để upload ảnh.");
-      return;
-    }
-
-    try {
-      setUploading(true);
-      setError("");
-
-      const result = await uploadProductImage(file, token);
-      if (result?.imageUrl) {
-        handleChange("imageUrl", result.imageUrl);
-      }
-    } catch (err) {
-      setError(err?.message || "Upload ảnh thất bại.");
-    } finally {
-      setUploading(false);
-      event.target.value = "";
-    }
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!token) {
-      setError("Bạn cần đăng nhập admin backend để thao tác CRUD.");
-      return;
-    }
-
-    if (!form.name.trim()) {
-      setError("Tên sản phẩm là bắt buộc.");
-      return;
-    }
-
-    if (!form.price || Number(form.price) < 0) {
-      setError("Giá sản phẩm không hợp lệ.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const payload = {
-        name: form.name.trim(),
-        categoryId: form.categoryId ? Number(form.categoryId) : null,
-        price: Number(form.price),
-        stockQty: Number(form.stockQty || 0),
-        status: form.status,
-        imageUrl: form.imageUrl || null,
-        description: form.description || null,
-      };
-
-      if (isEditMode) {
-        await updateProduct(id, payload, token);
-      } else {
-        await createProduct(payload, token);
-      }
-
-      navigate("/admin/products", { replace: true });
-    } catch (err) {
-      setError(err?.message || "Lưu sản phẩm thất bại.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (loading && isEditMode) {
+    return (
+      <div className="admin-page">
+        <section className="admin-surface">
+          <p>Đang tải dữ liệu...</p>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-page">
@@ -191,163 +99,161 @@ export default function ProductForm() {
         <div className="admin-hero-header">
           <div>
             <p className="admin-kicker">Product editor</p>
-            <h1>{isEditMode ? `Cap nhat san pham #${id}` : "Tao san pham moi"}</h1>
-            <p>
-              Toi giu nguyen luong CRUD backend, nhung dua man form nay ve cung he
-              giao dien admin moi de no khong bi tach khoi dashboard va order manager.
-            </p>
-          </div>
-
-          <div className="admin-hero-actions">
-            <button
-              type="button"
-              className="admin-link-button-outline"
-              onClick={() => navigate("/admin/products")}
-            >
-              Ve danh sach san pham
-            </button>
+            <h1>{isEditMode ? `Cập nhật sản phẩm #${id}` : "Tạo sản phẩm mới"}</h1>
+            <p>Toàn bộ text trong form đã được chuẩn hóa để dễ đọc và dễ thao tác.</p>
           </div>
         </div>
       </section>
 
-      <section className="admin-overview-grid">
-        {formStats.map((item) => (
-          <article key={item.label} className="admin-overview-card">
-            <p>{item.label}</p>
-            <strong>{item.value}</strong>
-            <span>{item.note}</span>
-          </article>
-        ))}
-      </section>
-
       <section className="admin-form">
-        <h2>{isEditMode ? `Cập nhật sản phẩm #${id}` : "Tạo sản phẩm mới"}</h2>
-        <p>Nhap thong tin co ban, map danh muc va preview anh truoc khi luu.</p>
+        <Formik
+          enableReinitialize
+          initialValues={initialValues}
+          validationSchema={ProductSchema}
+          onSubmit={async (values, { setSubmitting }) => {
+            try {
+              if (!token) {
+                throw new Error("Cần đăng nhập admin backend để thao tác");
+              }
 
-        <form className="admin-form-grid" onSubmit={handleSubmit}>
-          <div className="admin-form-field">
-            <label>Tên sản phẩm</label>
-            <input
-              type="text"
-              placeholder="Nhập tên sản phẩm"
-              value={form.name}
-              onChange={(event) => handleChange("name", event.target.value)}
-              disabled={loading}
-            />
-          </div>
+              const payload = {
+                name: values.name.trim(),
+                categoryId: Number(values.categoryId),
+                price: Number(values.price),
+                stockQty: Number(values.stockQty || 0),
+                status: values.status,
+                imageUrl: values.imageUrl,
+                description: values.description,
+              };
 
-          <div className="admin-form-field">
-            <label>Danh mục</label>
-            <select
-              value={form.categoryId}
-              onChange={(event) => handleChange("categoryId", event.target.value)}
-              disabled={loading}
-            >
-              <option value="">Chọn danh mục</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              if (isEditMode) {
+                await updateProduct(id, payload, token);
+                notifySuccess("Cập nhật sản phẩm thành công");
+              } else {
+                await createProduct(payload, token);
+                notifySuccess("Tạo sản phẩm thành công");
+              }
 
-          <div className="admin-form-field">
-            <label>Giá bán</label>
-            <input
-              type="number"
-              min="0"
-              placeholder="39990000"
-              value={form.price}
-              onChange={(event) => handleChange("price", event.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="admin-form-field">
-            <label>Số lượng tồn</label>
-            <input
-              type="number"
-              min="0"
-              placeholder="10"
-              value={form.stockQty}
-              onChange={(event) => handleChange("stockQty", event.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="admin-form-field">
-            <label>Trạng thái</label>
-            <select
-              value={form.status}
-              onChange={(event) => handleChange("status", event.target.value)}
-              disabled={loading}
-            >
-              <option value="active">Đang bán</option>
-              <option value="inactive">Tạm ẩn</option>
-            </select>
-          </div>
-
-          <div className="admin-form-field">
-            <label>Upload ảnh sản phẩm</label>
-            <input type="file" accept="image/*" onChange={handleUploadImage} disabled={loading || uploading} />
-            {uploading && <small>Đang upload ảnh...</small>}
-          </div>
-
-          <div className="admin-form-field full">
-            <label>URL ảnh</label>
-            <input
-              type="text"
-              placeholder="/uploads/ten-anh.jpg hoặc URL đầy đủ"
-              value={form.imageUrl}
-              onChange={(event) => handleChange("imageUrl", event.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          {form.imageUrl && (
-            <div className="admin-form-field full">
-              <label>Preview ảnh</label>
-              <div className="admin-image-preview">
-                <img src={toAbsoluteImageUrl(form.imageUrl)} alt="Preview" />
+              navigate("/admin/products", { replace: true });
+            } catch (error) {
+              notifyError(error, "Lưu sản phẩm thất bại");
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+        >
+          {({ values, setFieldValue, isSubmitting }) => (
+            <Form className="admin-form-grid">
+              <div className="admin-form-field">
+                <label>Tên sản phẩm</label>
+                <Field name="name" type="text" placeholder="Nhập tên sản phẩm" />
+                <ErrorMessage name="name" component="small" className="admin-inline-error" />
               </div>
-            </div>
+
+              <div className="admin-form-field">
+                <label>Danh mục</label>
+                <Field as="select" name="categoryId">
+                  <option value="">Chọn danh mục</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Field>
+                <ErrorMessage name="categoryId" component="small" className="admin-inline-error" />
+              </div>
+
+              <div className="admin-form-field">
+                <label>Giá bán</label>
+                <Field name="price" type="number" min="0" />
+                <ErrorMessage name="price" component="small" className="admin-inline-error" />
+              </div>
+
+              <div className="admin-form-field">
+                <label>Số lượng tồn</label>
+                <Field name="stockQty" type="number" min="0" />
+                <ErrorMessage name="stockQty" component="small" className="admin-inline-error" />
+              </div>
+
+              <div className="admin-form-field">
+                <label>Trạng thái</label>
+                <Field as="select" name="status">
+                  <option value="active">Đang bán</option>
+                  <option value="inactive">Tạm ẩn</option>
+                </Field>
+                <ErrorMessage name="status" component="small" className="admin-inline-error" />
+              </div>
+
+              <div className="admin-form-field">
+                <label>Upload ảnh sản phẩm</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+
+                    try {
+                      if (!token) {
+                        throw new Error("Cần đăng nhập admin backend để upload ảnh");
+                      }
+
+                      setUploading(true);
+                      const result = await uploadProductImage(file, token);
+                      if (result?.imageUrl) {
+                        setFieldValue("imageUrl", result.imageUrl);
+                        notifySuccess("Upload ảnh thành công");
+                      }
+                    } catch (error) {
+                      notifyError(error, "Upload ảnh thất bại");
+                    } finally {
+                      setUploading(false);
+                      event.target.value = "";
+                    }
+                  }}
+                />
+                {uploading ? <small>Đang upload...</small> : null}
+              </div>
+
+              <div className="admin-form-field full">
+                <label>URL ảnh</label>
+                <Field name="imageUrl" type="text" placeholder="/uploads/ten-anh.jpg" />
+                <ErrorMessage name="imageUrl" component="small" className="admin-inline-error" />
+              </div>
+
+              {values.imageUrl ? (
+                <div className="admin-form-field full">
+                  <label>Xem trước ảnh</label>
+                  <div className="admin-image-preview">
+                    <img src={toAbsoluteImageUrl(values.imageUrl)} alt="Preview" />
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="admin-form-field full">
+                <label>Mô tả ngắn</label>
+                <Field as="textarea" rows={4} name="description" placeholder="Mô tả sản phẩm" />
+                <ErrorMessage name="description" component="small" className="admin-inline-error" />
+              </div>
+
+              <div className="admin-form-field full">
+                <div className="admin-toolbar">
+                  <button type="submit" className="admin-btn" disabled={isSubmitting || uploading}>
+                    {isSubmitting ? "ĐANG LƯU..." : isEditMode ? "LƯU CẬP NHẬT" : "TẠO SẢN PHẨM"}
+                  </button>
+                  <button type="button" className="admin-btn-outline" onClick={() => navigate("/admin/products")}>
+                    HỦY
+                  </button>
+                </div>
+              </div>
+            </Form>
           )}
-
-          <div className="admin-form-field full">
-            <label>Mô tả ngắn</label>
-            <textarea
-              rows={4}
-              placeholder="Mô tả sản phẩm"
-              value={form.description}
-              onChange={(event) => handleChange("description", event.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          {error && (
-            <div className="admin-form-field full">
-              <p className="admin-inline-error">{error}</p>
-            </div>
-          )}
-
-          <div className="admin-form-field full">
-            <div className="admin-toolbar">
-              <button type="submit" className="admin-btn" disabled={loading || uploading}>
-                {loading ? "ĐANG LƯU..." : isEditMode ? "LƯU CẬP NHẬT" : "TẠO SẢN PHẨM"}
-              </button>
-              <button
-                type="button"
-                className="admin-btn-outline"
-                onClick={() => navigate("/admin/products")}
-                disabled={loading || uploading}
-              >
-                HỦY
-              </button>
-            </div>
-          </div>
-        </form>
+        </Formik>
       </section>
     </div>
   );
 }
+
+
+
+

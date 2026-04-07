@@ -20,7 +20,12 @@ const getProducts = asyncHandler(async (req, res) => {
   const {
     search = '',
     categoryId = null,
+    categoryIds = null,
+    categoryGroup = null,
+    focusFilter = null,
     status = null,
+    minPrice = null,
+    maxPrice = null,
     page = 1,
     limit = 12,
     sortBy = 'created_at',
@@ -30,7 +35,15 @@ const getProducts = asyncHandler(async (req, res) => {
   const result = await listProducts({
     search: String(search || '').trim(),
     categoryId: categoryId ? Number(categoryId) : null,
+    categoryIds: String(categoryIds || '')
+      .split(',')
+      .map((item) => Number(item.trim()))
+      .filter((item) => Number.isFinite(item) && item > 0),
+    categoryGroup: categoryGroup ? String(categoryGroup).trim().toLowerCase() : null,
+    focusFilterId: focusFilter ? String(focusFilter).trim().toLowerCase() : null,
     status: status ? String(status) : null,
+    minPrice: minPrice !== null && minPrice !== undefined && minPrice !== '' ? Number(minPrice) : null,
+    maxPrice: maxPrice !== null && maxPrice !== undefined && maxPrice !== '' ? Number(maxPrice) : null,
     page: toPositiveInt(page, 1),
     limit: Math.min(50, toPositiveInt(limit, 12)),
     sortBy: String(sortBy),
@@ -64,7 +77,7 @@ const getProductById = asyncHandler(async (req, res) => {
 });
 
 const createProductHandler = asyncHandler(async (req, res) => {
-  const { categoryId, name, slug, description, price, stockQty, imageUrl, status } = req.body || {};
+  const { categoryId, productCode, name, slug, description, price, stockQty, imageUrl, status } = req.body || {};
 
   if (!name || price === undefined || price === null) {
     throw httpError(400, 'name và price là bắt buộc');
@@ -87,6 +100,7 @@ const createProductHandler = asyncHandler(async (req, res) => {
 
   const product = await createProduct({
     categoryId: categoryId ? Number(categoryId) : null,
+    productCode: productCode ? String(productCode).trim() : null,
     name: String(name).trim(),
     slug: nextSlug,
     description: description ? String(description) : null,
@@ -115,6 +129,7 @@ const updateProductHandler = asyncHandler(async (req, res) => {
 
   const {
     categoryId = current.category_id,
+    productCode = current.product_code,
     name = current.name,
     slug = current.slug,
     description = current.description,
@@ -136,6 +151,7 @@ const updateProductHandler = asyncHandler(async (req, res) => {
 
   const product = await updateProduct(id, {
     categoryId: categoryId ? Number(categoryId) : null,
+    productCode: productCode ? String(productCode).trim() : null,
     name: String(name).trim(),
     slug: nextSlug,
     description: description ? String(description) : null,

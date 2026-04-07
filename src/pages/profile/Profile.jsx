@@ -1,16 +1,20 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { profileApi, updateProfileApi } from "../../services/authService";
+import { notifyError, notifySuccess } from "../../utils/notify";
 import "../shared/PageBlocks.css";
 
 const profileTips = [
-  "Luu dia chi nhan hang mac dinh de checkout nhanh hon.",
-  "Dung email chinh de khong bo lo xac nhan bao hanh va ma don.",
-  "Cap nhat so dien thoai de sale callback khi can doi linh kien.",
+  "Lưu địa chỉ nhận hàng mặc định để checkout nhanh.",
+  "Dùng email chính để nhận thông báo bảo hành và mã đơn.",
+  "Cập nhật số điện thoại để kỹ thuật liên hệ khi cần.",
 ];
 
 const quickActions = [
-  { label: "Xem don hang", href: "/orders" },
-  { label: "Doi mat khau", href: "/change-password" },
+  { label: "Xem đơn hàng", href: "/orders" },
+  { label: "Đổi mật khẩu", href: "/change-password" },
+  { label: "Bảo hành", href: "/policy-warranty" },
   { label: "Build PC", href: "/build-pc" },
 ];
 
@@ -22,37 +26,126 @@ const getInitials = (name = "User Demo") =>
     .map((part) => part[0]?.toUpperCase())
     .join("");
 
-export default function Profile() {
-  const { session } = useAuth();
+const buildInitialForm = (session) => ({
+  fullName: session?.name || "",
+  email: session?.email || "",
+  phone: session?.phone || "",
+  birthDate: session?.birthDate || "",
+  defaultShippingAddress: session?.defaultShippingAddress || "",
+  deliveryNote: session?.deliveryNote || "",
+});
 
-  const safeName = session?.name || "Khach hang";
-  const safeEmail = session?.email || "customer@demo.local";
+export default function Profile() {
+  const { session, token, refreshProfile } = useAuth();
+  const [form, setForm] = useState(() => buildInitialForm(session));
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setForm(buildInitialForm(session));
+  }, [session]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProfile = async () => {
+      if (!token) return;
+
+      try {
+        setLoading(true);
+        const profile = await profileApi(token);
+        if (!mounted || !profile) return;
+
+        setForm({
+          fullName: profile.full_name || "",
+          email: profile.email || "",
+          phone: profile.phone || "",
+          birthDate: profile.birth_date ? String(profile.birth_date).slice(0, 10) : "",
+          defaultShippingAddress: profile.default_shipping_address || "",
+          deliveryNote: profile.delivery_note || "",
+        });
+      } catch (error) {
+        notifyError(error, "Không tải được hồ sơ từ backend");
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      mounted = false;
+    };
+  }, [token]);
+
+  const safeName = form.fullName || session?.name || "Khách hàng";
+  const safeEmail = form.email || session?.email || "customer@demo.local";
   const safeAccount = session?.account || "guest";
-  const safeSource = session?.source === "backend" ? "Backend account" : "Local demo";
+  const safeSource = session?.source === "backend" ? "Tài khoản backend" : "Demo local";
   const safeRole = session?.role || "user";
   const lastLogin = session?.loginAt
     ? new Intl.DateTimeFormat("vi-VN", {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(session.loginAt))
-    : "Chua co du lieu";
+    : "Chưa có dữ liệu";
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!token) {
+      notifyError(new Error("Bạn cần đăng nhập backend để lưu hồ sơ"), "Chưa có phiên backend");
+      return;
+    }
+
+    const payload = {
+      fullName: String(form.fullName || "").trim(),
+      email: String(form.email || "").trim(),
+      phone: String(form.phone || "").trim(),
+      birthDate: String(form.birthDate || "").trim(),
+      defaultShippingAddress: String(form.defaultShippingAddress || "").trim(),
+      deliveryNote: String(form.deliveryNote || "").trim(),
+    };
+
+    if (!payload.fullName || !payload.email) {
+      notifyError(new Error("Họ tên và email là bắt buộc"), "Thiếu thông tin");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await updateProfileApi(payload, token);
+      await refreshProfile();
+      notifySuccess("Đã lưu hồ sơ lên backend");
+    } catch (error) {
+      notifyError(error, "Lưu hồ sơ thất bại");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (key) => (event) => {
+    const value = event.target.value;
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
   return (
     <div className="page-shell">
       <section className="page-hero-card">
         <div className="page-hero-copy">
           <p className="page-eyebrow">My account</p>
-          <h1 className="page-title">Trang profile can cho thay ro danh tinh va thao tac nhanh.</h1>
-          <p className="page-subtitle">
-            Toi da doi trang tai khoan tu form co ban thanh mot workspace co tom tat
-            tai khoan, thong tin lien he, quick actions va cac ghi chu de user de
-            quay lai don hang hoac doi mat khau.
-          </p>
+          <h1 className="page-title">Quản lý tài khoản gọn, rõ và thao tác nhanh.</h1>
+          <p className="page-subtitle">Quản lý hồ sơ cá nhân và thông tin nhận hàng.</p>
 
           <div className="page-hero-actions">
             <span className="page-inline-code">{safeSource}</span>
             <Link to="/orders" className="page-btn-outline">
-              Xem lich su don
+              Xem lịch sử đơn
             </Link>
           </div>
         </div>
@@ -60,21 +153,15 @@ export default function Profile() {
 
       <section className="page-highlight-grid">
         <article className="page-highlight-card">
-          <p>Kenh dang nhap</p>
-          <strong>{safeSource}</strong>
-          <span>Giup phan biet tai khoan local demo va backend account.</span>
-        </article>
-
-        <article className="page-highlight-card">
-          <p>Vai tro</p>
+          <p>Vai trò</p>
           <strong>{safeRole}</strong>
-          <span>Dang mo giao dien danh cho role user trong he thong.</span>
+          <span>Quyền hiện tại của phiên đăng nhập.</span>
         </article>
 
         <article className="page-highlight-card">
-          <p>Lan dang nhap</p>
+          <p>Lần đăng nhập</p>
           <strong>{lastLogin}</strong>
-          <span>Moc tham chieu de user kiem tra bao mat tai khoan.</span>
+          <span>Thông tin phiên gần nhất.</span>
         </article>
       </section>
 
@@ -84,51 +171,45 @@ export default function Profile() {
             <div className="page-panel-header">
               <div>
                 <p className="page-panel-kicker">Profile form</p>
-                <h2>Thong tin ca nhan va dia chi mac dinh</h2>
+                <h2>Thông tin cá nhân và địa chỉ mặc định</h2>
               </div>
-              <p>Ban hien dang dang nhap voi tai khoan {safeAccount}.</p>
+              <p>Bạn đang đăng nhập với tài khoản {safeAccount}.</p>
             </div>
 
-            <form className="page-form" style={{ marginTop: "12px" }} onSubmit={(event) => event.preventDefault()}>
+            <form className="page-form" style={{ marginTop: "12px" }} onSubmit={handleSubmit}>
               <div className="page-form-grid">
                 <div className="page-field">
-                  <label>Ho va ten</label>
-                  <input type="text" defaultValue={safeName} />
+                  <label>Họ và tên</label>
+                  <input type="text" value={form.fullName} onChange={handleChange("fullName")} />
                 </div>
                 <div className="page-field">
                   <label>Email</label>
-                  <input type="email" defaultValue={safeEmail} />
+                  <input type="email" value={form.email} onChange={handleChange("email")} />
                 </div>
                 <div className="page-field">
-                  <label>So dien thoai</label>
-                  <input type="text" placeholder="09xxxxxxxx" defaultValue="0909 123 456" />
+                  <label>Số điện thoại</label>
+                  <input type="text" placeholder="09xxxxxxxx" value={form.phone} onChange={handleChange("phone")} />
                 </div>
                 <div className="page-field">
-                  <label>Ngay sinh</label>
-                  <input type="date" defaultValue="2000-01-01" />
+                  <label>Ngày sinh</label>
+                  <input type="date" value={form.birthDate} onChange={handleChange("birthDate")} />
                 </div>
                 <div className="page-field full">
-                  <label>Dia chi nhan hang mac dinh</label>
-                  <textarea
-                    rows={4}
-                    defaultValue="123 Nguyen Van Linh, Phuong Tan Phong, Quan 7, TP.HCM"
-                  />
+                  <label>Địa chỉ nhận hàng mặc định</label>
+                  <textarea rows={4} value={form.defaultShippingAddress} onChange={handleChange("defaultShippingAddress")} />
                 </div>
                 <div className="page-field full">
-                  <label>Ghi chu giao hang</label>
-                  <textarea
-                    rows={3}
-                    defaultValue="Goi truoc 15 phut. Neu giao gio hanh chinh thi nhan tai quay tiep tan."
-                  />
+                  <label>Ghi chú giao hàng</label>
+                  <textarea rows={3} value={form.deliveryNote} onChange={handleChange("deliveryNote")} />
                 </div>
               </div>
 
               <div className="page-actions">
-                <button type="submit" className="page-btn">
-                  Luu thay doi
+                <button type="submit" className="page-btn" disabled={!token || loading || saving}>
+                  {saving ? "ĐANG LƯU..." : "Lưu thay đổi"}
                 </button>
                 <Link to="/change-password" className="page-btn-outline">
-                  Doi mat khau
+                  Đổi mật khẩu
                 </Link>
               </div>
             </form>
@@ -138,7 +219,7 @@ export default function Profile() {
             <div className="page-panel-header">
               <div>
                 <p className="page-panel-kicker">Quick actions</p>
-                <h2>Cac thao tac thuong dung</h2>
+                <h2>Thao tác thường dùng</h2>
               </div>
             </div>
 
@@ -146,10 +227,10 @@ export default function Profile() {
               {quickActions.map((item) => (
                 <article key={item.label} className="page-tip-card">
                   <strong>{item.label}</strong>
-                  <p>Mo nhanh chuc nang lien quan ma khach hay quay lai trong hanh trinh mua hang.</p>
+                  <p>Mở nhanh tính năng liên quan trong quá trình mua hàng.</p>
                   <div className="page-actions" style={{ marginTop: "10px" }}>
                     <Link to={item.href} className="page-btn-outline">
-                      Di den trang
+                      Đi đến trang
                     </Link>
                   </div>
                 </article>
@@ -179,11 +260,11 @@ export default function Profile() {
                 <span>{safeAccount}</span>
               </div>
               <div className="page-kv-row">
-                <p>Trang thai</p>
-                <span>Dang hoat dong</span>
+                <p>Trạng thái</p>
+                <span>{token ? "Đồng bộ backend" : "Local demo"}</span>
               </div>
               <div className="page-kv-row">
-                <p>Lan dang nhap</p>
+                <p>Lần đăng nhập</p>
                 <span>{lastLogin}</span>
               </div>
             </div>
@@ -193,7 +274,7 @@ export default function Profile() {
             <div className="page-tip-grid">
               {profileTips.map((tip) => (
                 <article key={tip} className="page-tip-card">
-                  <strong>Luu y</strong>
+                  <strong>Lưu ý</strong>
                   <p>{tip}</p>
                 </article>
               ))}
@@ -201,10 +282,11 @@ export default function Profile() {
           </section>
 
           <section className="page-support-card">
-            <h2 className="page-title">Muon doi sang luong profile that?</h2>
+            <h2 className="page-title">Đồng bộ hồ sơ</h2>
             <p className="page-subtitle">
-              Hien tai day moi la FE workspace. Neu can, toi co the noi form nay vao
-              API cap nhat profile de luu du lieu that cho backend.
+              {token
+                ? "Thông tin hồ sơ đã kết nối API backend và lưu theo tài khoản."
+                : "Bạn cần đăng nhập backend để lưu hồ sơ thật."}
             </p>
           </section>
         </div>

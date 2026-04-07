@@ -1,72 +1,113 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatCurrency, products } from "../../data/storeData";
+import { formatCurrency } from "../../data/storeData";
+import { useAuth } from "../../context/AuthContext";
+import {
+  clearCartApi,
+  fetchCart,
+  removeCartItemApi,
+  updateCartItemApi,
+} from "../../services/cartService";
 import "../shared/PageBlocks.css";
 
-const initialCartItems = products.slice(0, 3).map((product, index) => ({
-  ...product,
-  qty: index === 1 ? 2 : 1,
-  deliveryNote: index === 0 ? "Co san tai showroom, co the giao trong ngay." : "Hang du kho, du kien giao 1 - 3 ngay.",
-}));
-
-const serviceNotes = [
-  {
-    title: "Lap rap + cable management",
-    text: "Kiem tra tuong thich, di day gon va test nhanh truoc khi giao.",
-  },
-  {
-    title: "Bao hanh 1 doi 1 theo linh kien",
-    text: "Nhan ho tro tiep nhan bao hanh va doi chieu serial ngay tai cua hang.",
-  },
-  {
-    title: "Call xac nhan cau hinh",
-    text: "CSKH goi lai truoc khi dong goi de tranh sai phien ban linh kien.",
-  },
-  {
-    title: "Nang cap thanh combo",
-    text: "Co the ghep them man hinh, gear va phan mem de tang gia tri don.",
-  },
-];
+const mapApiCartItems = (items = []) =>
+  items.map((item) => ({
+    id: item.id ?? item.cart_item_id ?? item.product_id,
+    productId: item.product_id ?? item.productId ?? item.id,
+    name: item.product_name ?? item.name ?? `Product ${item.product_id || ""}`,
+    image: item.image_url || item.image || "",
+    price: Number(item.price ?? item.unit_price ?? 0),
+    qty: Number(item.quantity ?? item.qty ?? 1),
+    deliveryNote:
+      Number(item.stock_qty || 0) > 0
+        ? "Có sẵn, giao nhanh"
+        : "Đặt trước, giao 1 - 3 ngày",
+    specs: item.specs || {},
+  }));
 
 export default function Cart() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const { token } = useAuth();
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const isGuest = !token;
+
+  const loadCart = async () => {
+    setLoading(true);
+    try {
+      const items = await fetchCart(token);
+      setCartItems(mapApiCartItems(items));
+      setError("");
+    } catch (err) {
+      setError(err?.message || "Không tải được giỏ hàng.");
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  const totalItems = useMemo(
+    () => cartItems.reduce((sum, item) => sum + Number(item.qty || 0), 0),
+    [cartItems]
+  );
+
+  const subtotal = useMemo(
+    () =>
+      cartItems.reduce(
+        (sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0),
+        0
+      ),
+    [cartItems]
+  );
+
+  const shippingFee = subtotal >= 30_000_000 ? 0 : cartItems.length > 0 ? 45_000 : 0;
+  const memberDiscount =
+    subtotal >= 60_000_000 ? 750_000 : subtotal >= 30_000_000 ? 300_000 : 0;
+  const total = Math.max(0, subtotal + shippingFee - memberDiscount);
 
   const updateQty = (id, delta) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, qty: Math.max(1, item.qty + delta) }
-          : item
-      )
-    );
+    const target = cartItems.find((item) => String(item.id) === String(id));
+    if (!target) return;
+
+    const nextQty = Math.max(1, Number(target.qty || 1) + delta);
+
+    updateCartItemApi({ cartItemId: id, quantity: nextQty }, token)
+      .then(loadCart)
+      .catch((err) => setError(err?.message || "Cập nhật số lượng thất bại."));
   };
 
   const removeItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    removeCartItemApi(id, token)
+      .then(loadCart)
+      .catch((err) => setError(err?.message || "Xóa sản phẩm thất bại."));
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shippingFee = subtotal >= 30_000_000 ? 0 : cartItems.length > 0 ? 45_000 : 0;
-  const setupSupport = cartItems.length > 0 ? 0 : 0;
-  const memberDiscount = subtotal >= 60_000_000 ? 750_000 : subtotal >= 30_000_000 ? 300_000 : 0;
-  const total = Math.max(0, subtotal + shippingFee + setupSupport - memberDiscount);
+  const clearCart = () => {
+    clearCartApi(token)
+      .then(loadCart)
+      .catch((err) => setError(err?.message || "Xóa giỏ hàng thất bại."));
+  };
 
   return (
-    <div className="page-shell">
+    <div className="page-shell cart-page">
       <section className="page-hero-card">
         <div className="page-hero-copy">
-          <p className="page-eyebrow">Cart workspace</p>
-          <h1 className="page-title">Gio hang can ro gia tri don va thao tac nhanh.</h1>
+          <p className="page-eyebrow">Giỏ hàng</p>
+          <h1 className="page-title">Kiểm tra nhanh trước khi thanh toán.</h1>
           <p className="page-subtitle">
-            Toi da doi gio hang tu bang don gian sang bo cuc card co thong tin cau
-            hinh, so luong, dich vu di kem va bang tong ket de nguoi dung de chot
-            don hon.
+            Giao diện đã rút gọn: chỉ giữ sản phẩm, số lượng và tổng tiền để thao tác nhanh hơn.
           </p>
 
           <div className="page-hero-actions">
-            <span className="page-inline-code">Cart demo</span>
+            <span className="page-inline-code">{isGuest ? "Khách vãng lai" : "Đồng bộ API"}</span>
             <Link to="/products" className="page-btn-outline">
-              Xem them san pham
+              Tiếp tục mua hàng
             </Link>
           </div>
         </div>
@@ -74,58 +115,51 @@ export default function Cart() {
 
       <section className="page-highlight-grid">
         <article className="page-highlight-card">
-          <p>San pham dang giu</p>
-          <strong>{cartItems.length}</strong>
-          <span>So mon dang nam trong don cho khach xac nhan.</span>
+          <p>Sản phẩm</p>
+          <strong>{totalItems}</strong>
+          <span>Số lượng sản phẩm trong giỏ hiện tại.</span>
         </article>
-
         <article className="page-highlight-card">
-          <p>Tam tinh</p>
+          <p>Tạm tính</p>
           <strong>{formatCurrency(subtotal)}</strong>
-          <span>Cap nhat theo so luong, linh kien va phan qua di kem.</span>
+          <span>Giá trị trước phí vận chuyển và ưu đãi.</span>
         </article>
-
         <article className="page-highlight-card">
-          <p>Van chuyen</p>
-          <strong>{shippingFee === 0 ? "Mien phi" : formatCurrency(shippingFee)}</strong>
-          <span>Don tu 30 trieu duoc uu tien free ship noi thanh.</span>
+          <p>Tổng thanh toán</p>
+          <strong>{formatCurrency(total)}</strong>
+          <span>Đã bao gồm phí vận chuyển và ưu đãi thành viên.</span>
         </article>
       </section>
 
+      {loading ? (
+        <section className="page-panel">
+          <p>Đang tải dữ liệu giỏ hàng...</p>
+        </section>
+      ) : null}
+
+      {error ? (
+        <section className="page-panel">
+          <p style={{ color: "#d14343", margin: 0 }}>{error}</p>
+        </section>
+      ) : null}
+
       {cartItems.length === 0 ? (
-        <>
-          <section className="page-empty-state">
-            <p className="page-panel-kicker">Cart empty</p>
-            <h2>Chua co san pham nao trong gio.</h2>
-            <p>
-              Ban co the quay lai danh muc san pham hoac vao Build PC de chon nhanh
-              mot cau hinh phu hop nhu cau.
-            </p>
+        <section className="page-empty-state">
+          <p className="page-panel-kicker">Giỏ hàng trống</p>
+          <h2>Bạn chưa có sản phẩm nào trong giỏ.</h2>
+          <p>
+            Hãy quay lại trang sản phẩm hoặc Build PC để chọn nhanh một cấu hình phù hợp.
+          </p>
 
-            <div className="page-actions">
-              <Link to="/products" className="page-btn">
-                Di den san pham
-              </Link>
-              <Link to="/build-pc" className="page-btn-outline">
-                Tu van Build PC
-              </Link>
-            </div>
-          </section>
-
-          <section className="page-support-card">
-            <h2 className="page-title">Can sale goi lai de len cau hinh?</h2>
-            <p className="page-subtitle">
-              Neu ban chua chac ve main, VGA, PSU hay man hinh, trang Build PC va team
-              tu van co the giup gom combo trong mot luot.
-            </p>
-
-            <div className="page-actions">
-              <Link to="/build-pc" className="page-btn-outline">
-                Mo cong cu Build PC
-              </Link>
-            </div>
-          </section>
-        </>
+          <div className="page-actions">
+            <Link to="/products" className="page-btn">
+              Đi đến sản phẩm
+            </Link>
+            <Link to="/build-pc" className="page-btn-outline">
+              Mở Build PC
+            </Link>
+          </div>
+        </section>
       ) : (
         <section className="page-layout-2-1">
           <div className="page-stack">
@@ -133,78 +167,67 @@ export default function Cart() {
               <div className="page-panel-header">
                 <div>
                   <p className="page-panel-kicker">Cart items</p>
-                  <h2>Danh sach san pham dang dat</h2>
+                  <h2>Sản phẩm trong giỏ</h2>
                 </div>
-                <p>{cartItems.reduce((sum, item) => sum + item.qty, 0)} mon dang duoc giu cho don nay.</p>
+                <p>{totalItems} sản phẩm</p>
               </div>
 
               <div className="page-cart-list" style={{ marginTop: "12px" }}>
-                {cartItems.map((item) => (
-                  <article key={item.id} className="page-cart-card">
-                    <div className="page-cart-thumb">
-                      <img src={item.image} alt={item.name} />
-                    </div>
+                {cartItems.map((item) => {
+                  const specSummary = [item.specs?.cpu, item.specs?.ram, item.specs?.vga]
+                    .filter(Boolean)
+                    .join(" | ");
 
-                    <div className="page-cart-content">
-                      <div className="page-cart-head">
-                        <div>
-                          <h3>{item.name}</h3>
-                          <p>
-                            {item.specs.cpu} | {item.specs.vga}
-                          </p>
-                          <div className="page-pill-row" style={{ marginTop: "8px" }}>
-                            <span className="page-pill">{item.type}</span>
-                            <span className="page-pill is-soft">{item.deliveryNote}</span>
+                  return (
+                    <article key={item.id} className="page-cart-card">
+                      <div className="page-cart-thumb">
+                        <img src={item.image} alt={item.name} />
+                      </div>
+
+                      <div className="page-cart-content">
+                        <div className="page-cart-head">
+                          <div>
+                            <h3>{item.name}</h3>
+                            <p>{specSummary || "Thông số đang cập nhật."}</p>
+                            <div className="page-pill-row" style={{ marginTop: "8px" }}>
+                              <span className="page-pill is-soft">{item.deliveryNote}</span>
+                            </div>
+                          </div>
+
+                          <div className="page-cart-price">
+                            <strong>{formatCurrency(item.price * item.qty)}</strong>
+                            <span>{formatCurrency(item.price)} / sản phẩm</span>
                           </div>
                         </div>
 
-                        <div className="page-cart-price">
-                          <strong>{formatCurrency(item.price * item.qty)}</strong>
-                          <span>{formatCurrency(item.price)} / san pham</span>
+                        <div className="page-cart-meta">
+                          <div className="page-qty-control">
+                            <button type="button" onClick={() => updateQty(item.id, -1)}>
+                              -
+                            </button>
+                            <span>{item.qty}</span>
+                            <button type="button" onClick={() => updateQty(item.id, 1)}>
+                              +
+                            </button>
+                          </div>
+
+                          <div className="page-cart-actions">
+                            <Link to={`/product/${item.productId ?? item.id}`} className="page-ghost-btn">
+                              Chi tiết
+                            </Link>
+                            <button
+                              type="button"
+                              className="page-ghost-btn"
+                              onClick={() => removeItem(item.id)}
+                            >
+                              Xóa
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="page-cart-meta">
-                        <div className="page-qty-control">
-                          <button type="button" onClick={() => updateQty(item.id, -1)}>
-                            -
-                          </button>
-                          <span>{item.qty}</span>
-                          <button type="button" onClick={() => updateQty(item.id, 1)}>
-                            +
-                          </button>
-                        </div>
-
-                        <div className="page-cart-actions">
-                          <Link to={`/product/${item.id}`} className="page-ghost-btn">
-                            Xem chi tiet
-                          </Link>
-                          <button type="button" className="page-ghost-btn" onClick={() => removeItem(item.id)}>
-                            Xoa khoi gio
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            <section className="page-panel">
-              <div className="page-panel-header">
-                <div>
-                  <p className="page-panel-kicker">Included services</p>
-                  <h2>Dich vu va ghi chu di kem</h2>
-                </div>
-              </div>
-
-              <div className="page-tip-grid" style={{ marginTop: "12px" }}>
-                {serviceNotes.map((note) => (
-                  <article key={note.title} className="page-tip-card">
-                    <strong>{note.title}</strong>
-                    <p>{note.text}</p>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             </section>
           </div>
@@ -214,56 +237,41 @@ export default function Cart() {
               <div className="page-panel-header">
                 <div>
                   <p className="page-panel-kicker">Order summary</p>
-                  <h2>Tong ket don hang</h2>
+                  <h2>Tóm tắt đơn hàng</h2>
                 </div>
               </div>
 
               <div className="page-summary-list" style={{ marginTop: "14px" }}>
                 <div className="page-summary-line">
-                  <p>Tam tinh san pham</p>
+                  <p>Tạm tính</p>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="page-summary-line">
-                  <p>Van chuyen</p>
-                  <span>{shippingFee === 0 ? "Mien phi" : formatCurrency(shippingFee)}</span>
+                  <p>Vận chuyển</p>
+                  <span>{shippingFee === 0 ? "Miễn phí" : formatCurrency(shippingFee)}</span>
                 </div>
                 <div className="page-summary-line">
-                  <p>Ho tro lap dat</p>
-                  <span>{formatCurrency(setupSupport)}</span>
-                </div>
-                <div className="page-summary-line">
-                  <p>Uu dai thanh vien</p>
+                  <p>Ưu đãi thành viên</p>
                   <span>- {formatCurrency(memberDiscount)}</span>
                 </div>
               </div>
 
               <div className="page-summary-total">
-                <p>Grand total</p>
+                <p>Tổng thanh toán</p>
                 <strong>{formatCurrency(total)}</strong>
-                <span>
-                  Gia tri nay la ban demo FE. Luong checkout / order that van chua
-                  noi full voi API.
-                </span>
-              </div>
-
-              <div className="page-checklist" style={{ marginTop: "12px" }}>
-                <div className="page-checklist-row">
-                  <p>Uu tien goi xac nhan</p>
-                  <span>Trong 15 - 30 phut</span>
-                </div>
-                <div className="page-checklist-row">
-                  <p>Trang thai giao nhanh</p>
-                  <span>Ap dung noi thanh</span>
-                </div>
+                <span>Miễn phí vận chuyển cho đơn từ 30.000.000 VND.</span>
               </div>
 
               <div className="page-actions" style={{ marginTop: "14px" }}>
                 <Link to="/checkout" className="page-btn">
-                  Sang checkout
+                  Tiến hành thanh toán
                 </Link>
-                <Link to="/build-pc" className="page-btn-outline">
-                  Chinh lai cau hinh
+                <Link to="/products" className="page-btn-outline">
+                  Mua thêm
                 </Link>
+                <button type="button" className="page-btn-outline" onClick={clearCart}>
+                  Xóa giỏ hàng
+                </button>
               </div>
             </section>
           </div>

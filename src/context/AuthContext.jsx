@@ -1,29 +1,9 @@
-﻿/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState } from "react";
 import { ApiError } from "../services/apiClient";
 import { loginApi, profileApi, registerApi } from "../services/authService";
 
 const SESSION_KEY = "pc_store_session";
-const LOCAL_ACCOUNTS_KEY = "pc_store_local_accounts";
-
-const LOCAL_SEED_ACCOUNTS = [
-  {
-    id: "local-1",
-    account: "tk1",
-    fullName: "User Demo",
-    email: "tk1@demo.local",
-    password: "123456",
-    role: "user",
-  },
-  {
-    id: "local-2",
-    account: "tk2",
-    fullName: "Admin Demo",
-    email: "tk2@demo.local",
-    password: "123456",
-    role: "admin",
-  },
-];
 
 const isValidEmail = (value = "") => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -50,159 +30,47 @@ const writeSession = (session) => {
   }
 };
 
-const readLocalAccounts = () => {
-  if (typeof window === "undefined") return [...LOCAL_SEED_ACCOUNTS];
-
-  try {
-    const raw = localStorage.getItem(LOCAL_ACCOUNTS_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    const dynamic = Array.isArray(parsed) ? parsed : [];
-
-    const merged = [...LOCAL_SEED_ACCOUNTS];
-
-    dynamic.forEach((account) => {
-      const exists = merged.some(
-        (seed) =>
-          seed.account.toLowerCase() === String(account.account || "").toLowerCase() ||
-          seed.email.toLowerCase() === String(account.email || "").toLowerCase()
-      );
-
-      if (!exists) {
-        merged.push(account);
-      }
-    });
-
-    return merged;
-  } catch {
-    return [...LOCAL_SEED_ACCOUNTS];
-  }
-};
-
-const writeLocalAccounts = (accounts) => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
-};
-
-const normalizeIdentity = ({ account, email }) => {
-  const input = String(account ?? email ?? "").trim().toLowerCase();
-  return input;
-};
-
-const toLocalSession = (account) => ({
-  id: account.id || `acc-${Date.now()}`,
-  email: account.email,
-  account: account.account,
-  name: account.fullName || account.account,
-  role: account.role || "user",
-  token: null,
-  source: "local",
+const toBackendSession = (data) => ({
+  id: `acc-${data.user.id}`,
+  email: data.user.email,
+  account: data.user.email.split("@")[0],
+  name: data.user.full_name || data.user.email,
+  phone: data.user.phone || "",
+  birthDate: data.user.birth_date || "",
+  defaultShippingAddress: data.user.default_shipping_address || "",
+  deliveryNote: data.user.delivery_note || "",
+  role: data.user.role,
+  token: data.token,
+  source: "backend",
   loginAt: new Date().toISOString(),
 });
-
-const findLocalAccountByIdentity = (identity, accounts) => {
-  if (!identity) return null;
-
-  if (identity.includes("@")) {
-    return accounts.find((item) => String(item.email || "").toLowerCase() === identity) || null;
-  }
-
-  return accounts.find((item) => String(item.account || "").toLowerCase() === identity) || null;
-};
-
-const shouldFallbackToLocal = (error, localAccounts, identity) => {
-  if (!(error instanceof ApiError)) {
-    return true;
-  }
-
-  if (!error.statusCode || error.statusCode >= 500) {
-    return true;
-  }
-
-  if (error.statusCode === 401 && findLocalAccountByIdentity(identity, localAccounts)) {
-    return true;
-  }
-
-  return false;
-};
-
-const tryLoginLocal = ({ identity, password, accounts }) => {
-  if (!password) {
-    throw new ApiError("M?t kh?u là b?t bu?c", 400);
-  }
-
-  const local = findLocalAccountByIdentity(identity, accounts);
-
-  if (!local) {
-    throw new ApiError("Không tìm th?y tài kho?n", 401);
-  }
-
-  if (String(local.password || "") !== String(password)) {
-    throw new ApiError("Sai tài kho?n ho?c m?t kh?u", 401);
-  }
-
-  return toLocalSession(local);
-};
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(() => readSession());
 
-  const login = async ({ account, email, password }) => {
-    const identity = normalizeIdentity({ account, email });
+  const login = async ({ email, password }) => {
+    const safeEmail = String(email || "").trim().toLowerCase();
+    const safePassword = String(password || "");
 
-    if (!identity) return null;
-
-    const localAccounts = readLocalAccounts();
-
-    if (!identity.includes("@")) {
-      const localSession = tryLoginLocal({ identity, password, accounts: localAccounts });
-      setSession(localSession);
-      writeSession(localSession);
-      return localSession;
+    if (!safeEmail || !isValidEmail(safeEmail)) {
+      throw new ApiError("Invalid email.", 400);
     }
 
-    if (!password) {
-      throw new ApiError("M?t kh?u là b?t bu?c", 400);
+    if (!safePassword) {
+      throw new ApiError("Password is required.", 400);
     }
 
-    try {
-      const data = await loginApi({
-        email: identity,
-        password,
-      });
+    const data = await loginApi({
+      email: safeEmail,
+      password: safePassword,
+    });
 
-      const nextSession = {
-        id: `acc-${data.user.id}`,
-        email: data.user.email,
-        account: data.user.email.split("@")[0],
-        name: data.user.full_name || data.user.email,
-        role: data.user.role,
-        token: data.token,
-        source: "backend",
-        loginAt: new Date().toISOString(),
-      };
-
-      setSession(nextSession);
-      writeSession(nextSession);
-      return nextSession;
-    } catch (backendError) {
-      const canFallbackLocal = shouldFallbackToLocal(backendError, localAccounts, identity);
-
-      if (!canFallbackLocal) {
-        throw backendError;
-      }
-
-      const localSession = tryLoginLocal({
-        identity,
-        password,
-        accounts: localAccounts,
-      });
-
-      setSession(localSession);
-      writeSession(localSession);
-      return localSession;
-    }
+    const nextSession = toBackendSession(data);
+    setSession(nextSession);
+    writeSession(nextSession);
+    return nextSession;
   };
 
   const register = async ({ fullName, email, password }) => {
@@ -211,78 +79,27 @@ export function AuthProvider({ children }) {
     const safePassword = String(password || "");
 
     if (!safeName || !safeEmail || !safePassword) {
-      throw new ApiError("Vui lòng nh?p d?y d? thông tin.", 400);
+      throw new ApiError("Please fill all required fields.", 400);
     }
 
     if (!isValidEmail(safeEmail)) {
-      throw new ApiError("Email không h?p l?.", 400);
+      throw new ApiError("Invalid email.", 400);
     }
 
     if (safePassword.length < 6) {
-      throw new ApiError("M?t kh?u t?i thi?u 6 ký t?.", 400);
+      throw new ApiError("Password must be at least 6 characters.", 400);
     }
 
-    try {
-      const data = await registerApi({
-        fullName: safeName,
-        email: safeEmail,
-        password: safePassword,
-      });
+    const data = await registerApi({
+      fullName: safeName,
+      email: safeEmail,
+      password: safePassword,
+    });
 
-      const nextSession = {
-        id: `acc-${data.user.id}`,
-        email: data.user.email,
-        account: data.user.email.split("@")[0],
-        name: data.user.full_name || data.user.email,
-        role: data.user.role,
-        token: data.token,
-        source: "backend",
-        loginAt: new Date().toISOString(),
-      };
-
-      setSession(nextSession);
-      writeSession(nextSession);
-      return nextSession;
-    } catch (backendError) {
-      const canFallbackLocal =
-        !(backendError instanceof ApiError) ||
-        !backendError.statusCode ||
-        backendError.statusCode >= 500;
-
-      if (!canFallbackLocal) {
-        throw backendError;
-      }
-
-      const localAccounts = readLocalAccounts();
-      const accountName = safeEmail.split("@")[0];
-
-      const duplicated = localAccounts.some(
-        (item) =>
-          String(item.email || "").toLowerCase() === safeEmail ||
-          String(item.account || "").toLowerCase() === accountName
-      );
-
-      if (duplicated) {
-        throw new ApiError("Tài kho?n dã t?n t?i ? local demo.", 400);
-      }
-
-      const newLocalAccount = {
-        id: `local-${Date.now()}`,
-        account: accountName,
-        fullName: safeName,
-        email: safeEmail,
-        password: safePassword,
-        role: "user",
-      };
-
-      const nextAccounts = [...localAccounts, newLocalAccount];
-      writeLocalAccounts(nextAccounts);
-
-      const localSession = toLocalSession(newLocalAccount);
-      setSession(localSession);
-      writeSession(localSession);
-      return localSession;
-    }
+    const nextSession = toBackendSession(data);
+    setSession(nextSession);
+    writeSession(nextSession);
+    return nextSession;
   };
 
   const refreshProfile = async () => {
@@ -293,6 +110,10 @@ export function AuthProvider({ children }) {
       ...session,
       email: profile.email,
       name: profile.full_name || session.name,
+      phone: profile.phone || "",
+      birthDate: profile.birth_date || "",
+      defaultShippingAddress: profile.default_shipping_address || "",
+      deliveryNote: profile.delivery_note || "",
       role: profile.role,
     };
 
@@ -331,7 +152,3 @@ export function useAuth() {
 
   return context;
 }
-
-
-
-

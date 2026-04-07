@@ -1,28 +1,58 @@
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
+import { forgotPasswordApi } from "../../services/authService";
+import { notifyError, notifySuccess } from "../../utils/notify";
 import "./Auth.css";
 
 const recoverySteps = [
-  "Nhap email da dang ky de he thong xac dinh tai khoan.",
-  "Gui link khoi phuc hoac OTP de xac nhan danh tinh.",
-  "Dat mat khau moi va thong bao lai cho user khi thanh cong.",
+  "Nhập email bạn đã đăng ký.",
+  "Hệ thống backend gửi link đặt lại mật khẩu qua email.",
+  "Mở link trong email để tạo mật khẩu mới.",
 ];
 
 export default function ForgotPassword() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [previewResetUrl, setPreviewResetUrl] = useState("");
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const safeEmail = String(email || "").trim();
+    if (!safeEmail) {
+      notifyError(new Error("Vui lòng nhập email"), "Thiếu email");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await forgotPasswordApi({ email: safeEmail });
+      const successMessage = result?.message || "Nếu email tồn tại, hệ thống đã gửi link đặt lại mật khẩu.";
+      const previewLink = String(result?.data?.previewResetUrl || "").trim();
+
+      setMessage(successMessage);
+      setPreviewResetUrl(previewLink);
+      notifySuccess(successMessage);
+    } catch (error) {
+      notifyError(error, "Gửi yêu cầu đặt lại mật khẩu thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-shell">
         <article className="auth-showcase">
-          <p className="auth-kicker">Recovery</p>
-          <h1>Trang quen mat khau can giai thich ro quy trinh khoi phuc.</h1>
-          <p className="auth-lead">
-            Hien tai project moi co FE placeholder cho buoc nay, nen toi bo sung them
-            context va cac buoc xu ly de man hinh khong bi trong.
-          </p>
+          <p className="auth-kicker">Khôi phục tài khoản</p>
+          <h1>Gửi link đặt lại mật khẩu qua email.</h1>
+          <p className="auth-lead">Biểu mẫu này đã kết nối API backend và gửi yêu cầu thật.</p>
 
           <div className="auth-feature-list">
             {recoverySteps.map((item, index) => (
               <article key={item} className="auth-feature-card">
-                <strong>Buoc {index + 1}</strong>
+                <strong>Bước {index + 1}</strong>
                 <p>{item}</p>
               </article>
             ))}
@@ -30,39 +60,54 @@ export default function ForgotPassword() {
 
           <div className="auth-link-row">
             <Link to="/login" className="auth-secondary-link">
-              Quay lai dang nhap
+              Quay lại đăng nhập
             </Link>
           </div>
         </article>
 
         <section className="auth-card">
           <div className="auth-card-top">
-            <p className="auth-kicker">Forgot password</p>
-            <h2>Khoi phuc tai khoan</h2>
-            <p>Nhap email da dang ky, sau do he thong se huong dan buoc tiep theo.</p>
+            <p className="auth-kicker">Quên mật khẩu</p>
+            <h2>Yêu cầu cấp lại mật khẩu</h2>
+            <p>Nhập email để nhận liên kết đặt lại mật khẩu.</p>
           </div>
 
-          <form className="auth-form" onSubmit={(event) => event.preventDefault()}>
+          <form className="auth-form" onSubmit={handleSubmit}>
             <div className="auth-field">
               <label htmlFor="forgot-email">Email</label>
-              <input id="forgot-email" type="email" placeholder="you@example.com" />
+              <input
+                id="forgot-email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
             </div>
 
-            <button type="submit" className="auth-submit">
-              GUI YEU CAU KHOI PHUC
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? "ĐANG GỬI..." : "GỬI LINK ĐẶT LẠI"}
             </button>
           </form>
 
-          <div className="auth-divider" />
+          {message ? (
+            <>
+              <div className="auth-divider" />
+              <div className="auth-note">{message}</div>
+            </>
+          ) : null}
 
-          <div className="auth-note">
-            Luong gui mail that chua duoc noi backend. Day la man FE duoc hoan thien
-            giao dien de san sang cho API sau.
-          </div>
+          {previewResetUrl ? (
+            <div className="auth-note" style={{ marginTop: "10px" }}>
+              <strong>Link test local:</strong>{" "}
+              <a href={previewResetUrl} target="_blank" rel="noreferrer">
+                {previewResetUrl}
+              </a>
+            </div>
+          ) : null}
 
           <div className="auth-alt">
-            <Link to="/login">Ve dang nhap</Link>
-            <Link to="/register">Tao tai khoan</Link>
+            <Link to="/login">Đăng nhập</Link>
+            <Link to="/register">Tạo tài khoản</Link>
           </div>
         </section>
       </div>

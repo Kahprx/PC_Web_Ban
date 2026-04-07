@@ -1,155 +1,106 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
 import { useAuth } from "../../context/AuthContext";
+import { notifyError, notifySuccess } from "../../utils/notify";
 import "./Auth.css";
 
-const loginHighlights = [
-  "Phan luong user va admin theo role ngay sau khi dang nhap.",
-  "Ho tro ca backend account va local demo account trong cung mot flow.",
-  "Trang nay da co bo cuc de giai thich context thay vi chi la form.",
-];
-
-const demoAccounts = [
-  { label: "User demo", account: "tk1", password: "123456" },
-  { label: "Admin demo", account: "tk2", password: "123456" },
-];
+const LoginSchema = Yup.object({
+  email: Yup.string().trim().email("Invalid email").required("Email is required"),
+  password: Yup.string().trim().min(6, "Password must be at least 6 characters").required("Password is required"),
+});
 
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [account, setAccount] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!account.trim() || !password.trim()) {
-      setError("Vui long nhap du tai khoan va mat khau.");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const session = await login({ account, password });
-
-      if (session?.role === "admin") {
-        navigate("/admin/dashboard", { replace: true });
-        return;
-      }
-
-      navigate("/", { replace: true });
-    } catch (err) {
-      setError(err?.message || "Dang nhap that bai.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="auth-page">
       <div className="auth-shell">
         <article className="auth-showcase">
-          <p className="auth-kicker">Account access</p>
-          <h1>Dang nhap de vao dung workspace va luong mua hang.</h1>
+          <p className="auth-kicker">Truy cập tài khoản</p>
+          <h1>Đăng nhập để sử dụng đầy đủ tính năng tài khoản.</h1>
           <p className="auth-lead">
-            Cung mot diem vao, he thong co the dua ban vao storefront hoac admin tuy
-            theo role. Toi giu nguyen logic cu va lam lai UI cho dung chat mot trang
-            auth that.
+            Biểu mẫu này kết nối trực tiếp API backend. Hồ sơ, lịch sử đơn hàng và quyền truy cập sẽ được đồng bộ
+            theo tài khoản của bạn.
           </p>
-
-          <div className="auth-badge-row">
-            <span className="auth-badge">Role-aware</span>
-            <span className="auth-badge">Local + backend</span>
-            <span className="auth-badge">Mobile friendly</span>
-          </div>
-
-          <div className="auth-feature-list">
-            {loginHighlights.map((item) => (
-              <article key={item} className="auth-feature-card">
-                <strong>Flow</strong>
-                <p>{item}</p>
-              </article>
-            ))}
-          </div>
-
-          <div className="auth-credential-grid">
-            {demoAccounts.map((demo) => (
-              <article key={demo.label} className="auth-credential-card">
-                <p>{demo.label}</p>
-                <strong>{demo.account}</strong>
-                <span>Mat khau: {demo.password}</span>
-              </article>
-            ))}
-          </div>
 
           <div className="auth-link-row">
             <Link to="/user" className="auth-secondary-link">
-              Quay lai trang chu
+              Về trang chủ
             </Link>
           </div>
         </article>
 
         <section className="auth-card">
           <div className="auth-card-top">
-            <p className="auth-kicker">Login</p>
-            <h2>Dang nhap tai khoan</h2>
-            <p>
-              Nhap username, email hoac tai khoan demo de truy cap nhanh vao he
-              thong.
-            </p>
+            <p className="auth-kicker">Đăng nhập</p>
+            <h2>Vào tài khoản</h2>
+            <p>Nhập email và mật khẩu để tiếp tục.</p>
           </div>
 
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <div className="auth-field">
-              <label htmlFor="login-account">Tai khoan</label>
-              <input
-                id="login-account"
-                type="text"
-                placeholder="username hoac email"
-                value={account}
-                onChange={(event) => setAccount(event.target.value)}
-              />
-            </div>
+          <Formik
+            initialValues={{ email: "", password: "" }}
+            validationSchema={LoginSchema}
+            onSubmit={async (values, { setSubmitting, setStatus }) => {
+              try {
+                setStatus("");
+                const session = await login({
+                  email: values.email,
+                  password: values.password,
+                });
 
-            <div className="auth-field">
-              <label htmlFor="login-password">Mat khau</label>
-              <input
-                id="login-password"
-                type="password"
-                placeholder="Nhap mat khau"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </div>
+                notifySuccess("Login success");
 
-            {error && (
-              <div className="auth-note is-error" aria-live="polite">
-                {error}
-              </div>
+                if (session?.role === "admin") {
+                  navigate("/admin/dashboard", { replace: true });
+                  return;
+                }
+
+                navigate("/", { replace: true });
+              } catch (error) {
+                setStatus(error?.message || "Login failed");
+                notifyError(error, "Login failed");
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            {({ isSubmitting, status }) => (
+              <Form className="auth-form">
+                <div className="auth-field">
+                  <label htmlFor="email">Email</label>
+                  <Field id="email" name="email" type="email" placeholder="you@example.com" />
+                  <ErrorMessage name="email" component="div" className="auth-note is-error" />
+                </div>
+
+                <div className="auth-field">
+                  <label htmlFor="password">Mật khẩu</label>
+                  <Field id="password" name="password" type="password" placeholder="Nhập mật khẩu" />
+                  <ErrorMessage name="password" component="div" className="auth-note is-error" />
+                </div>
+
+                {status ? (
+                  <div className="auth-note is-error" aria-live="polite">
+                    {status}
+                  </div>
+                ) : null}
+
+                <button type="submit" className="auth-submit" disabled={isSubmitting}>
+                  {isSubmitting ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP"}
+                </button>
+              </Form>
             )}
-
-            <button type="submit" className="auth-submit" disabled={loading}>
-              {loading ? "DANG DANG NHAP..." : "DANG NHAP"}
-            </button>
-          </form>
+          </Formik>
 
           <div className="auth-divider" />
 
           <div className="auth-alt">
-            <Link to="/forgot-password">Quen mat khau?</Link>
-            <Link to="/register">Tao tai khoan moi</Link>
+            <Link to="/forgot-password">Quên mật khẩu?</Link>
+            <Link to="/register">Tạo tài khoản</Link>
           </div>
 
-          <div className="auth-note">
-            Neu nhap email, he thong uu tien thu backend truoc. Neu dang dung
-            username nhu <strong>tk1</strong> hoac <strong>tk2</strong>, app se dung
-            local demo account.
-          </div>
+          <div className="auth-note">Bạn cần tài khoản backend để lưu và đồng bộ dữ liệu thực theo người dùng.</div>
         </section>
       </div>
     </div>

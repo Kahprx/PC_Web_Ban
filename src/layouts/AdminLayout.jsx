@@ -1,5 +1,6 @@
 ﻿import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 import iconAdmin from "../assets/images/PC/ICON/administrator.png";
 import iconDashboard from "../assets/images/PC/ICON/dashboard.png";
@@ -10,6 +11,7 @@ import iconStatistic from "../assets/images/PC/ICON/profit-growth.png";
 import iconLogout from "../assets/images/PC/ICON/logout.png";
 import iconSearch from "../assets/images/PC/ICON/search.png";
 import iconBell from "../assets/images/PC/ICON/bell.png";
+import iconSupport from "../assets/images/PC/ICON/paper-plane.png";
 import iconPhone from "../assets/images/PC/ICON/phone-call.png";
 import iconLocation from "../assets/images/PC/ICON/location.png";
 import iconShipping from "../assets/images/PC/ICON/delivery-truck.png";
@@ -20,6 +22,7 @@ const adminNav = [
   { to: "/admin/dashboard", label: "DASHBOARD", icon: iconDashboard },
   { to: "/admin/products", label: "SẢN PHẨM", icon: iconProduct },
   { to: "/admin/orders", label: "ĐƠN HÀNG", icon: iconOrder },
+  { to: "/admin/support-chat", label: "CHAT HỖ TRỢ", icon: iconSupport },
   { to: "/admin/users", label: "USER", icon: iconUser },
   { to: "/admin/dashboard", label: "THỐNG KÊ", icon: iconStatistic },
 ];
@@ -27,6 +30,7 @@ const adminNav = [
 export default function AdminLayout() {
   const navigate = useNavigate();
   const { session, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   return (
     <div className="admin-shell">
@@ -103,6 +107,10 @@ export default function AdminLayout() {
             </label>
 
             <div className="admin-header-actions">
+              <button type="button" className="admin-theme-toggle" onClick={toggleTheme}>
+                {isDark ? "LIGHT" : "DARK"}
+              </button>
+
               <button type="button" className="admin-header-bell" aria-label="Thông báo">
                 <img src={iconBell} alt="Bell" />
               </button>

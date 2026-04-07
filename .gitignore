@@ -33,3 +33,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment and local runtime artifacts
+.env
+.env.*
+!.env.example
+!backend/.env.example
+backend/.env
+backend/.pg-local/
+backend/.runtime/

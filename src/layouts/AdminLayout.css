@@ -212,6 +212,19 @@
   gap: 10px;
 }
 
+.admin-theme-toggle {
+  min-width: 68px;
+  height: 32px;
+  border: 1px solid #d5d5d5;
+  border-radius: 999px;
+  background: #f8f8f8;
+  color: #2a2a2a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
 .admin-header-bell {
   width: 32px;
   height: 32px;
@@ -254,6 +267,66 @@
 
 .admin-page-wrap {
   padding: 12px;
+}
+
+[data-theme="dark"] .admin-shell {
+  background: #12151c;
+}
+
+[data-theme="dark"] .admin-sidebar {
+  background: #181d26;
+  border-right-color: #2d3442;
+}
+
+[data-theme="dark"] .admin-sidebar-brand {
+  background: #242c38;
+  border-color: #374254;
+}
+
+[data-theme="dark"] .admin-sidebar-link {
+  color: #e7e1d8;
+}
+
+[data-theme="dark"] .admin-sidebar-link:hover,
+[data-theme="dark"] .admin-sidebar-link.is-active {
+  background: #232a36;
+  border-color: #3a4558;
+}
+
+[data-theme="dark"] .admin-sidebar-logout {
+  background: #252c38;
+  border-color: #3c4759;
+  color: #efe8de;
+}
+
+[data-theme="dark"] .admin-header {
+  background: #1a1f29;
+  border-bottom-color: #2f3746;
+}
+
+[data-theme="dark"] .admin-header-strip {
+  background: #202734;
+  border-bottom-color: #323b4b;
+}
+
+[data-theme="dark"] .admin-strip-group span,
+[data-theme="dark"] .admin-header-logo strong,
+[data-theme="dark"] .admin-header-logo small,
+[data-theme="dark"] .admin-header-user span {
+  color: #f0e9df;
+}
+
+[data-theme="dark"] .admin-header-search input,
+[data-theme="dark"] .admin-header-bell,
+[data-theme="dark"] .admin-theme-toggle {
+  background: #252d3a;
+  border-color: #3b4658;
+  color: #ece5d9;
+}
+
+[data-theme="dark"] .admin-header-user img {
+  background: #252d3a;
+  border-color: #3b4658;
 }
 
 @media (max-width: 1200px) {

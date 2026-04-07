@@ -1,56 +1,36 @@
-﻿# Phân tích nghiệp vụ PC Store
+# Phan tich nghiep vu PC Store
 
-## 1. Người dùng
-- Xem danh sách sản phẩm, xem chi tiết sản phẩm
-- Tìm kiếm theo tên/mô tả
-- Build PC theo cấu hình linh kiện
-- Đặt hàng và theo dõi lịch sử đơn
+## 1. Tac nhan
+- User: xem san pham, tim kiem, build PC, dat hang.
+- Admin: CRUD san pham, quan ly don hang, thong ke doanh thu.
 
-## 2. Admin
-- CRUD sản phẩm
-- Quản lý đơn hàng
-- Xem thống kê số đơn và doanh thu
+## 2. Use case chinh
+- UC01 Dang ky/Dang nhap.
+- UC02 Xem danh sach san pham + tim kiem theo ten/mo ta.
+- UC03 Xem chi tiet san pham.
+- UC04 Them gio hang va cap nhat so luong.
+- UC05 Build PC (chon linh kien theo nhom).
+- UC06 Checkout tao don hang.
+- UC07 Admin CRUD category/product.
+- UC08 Admin xem danh sach don, cap nhat trang thai.
+- UC09 Admin xem dashboard thong ke tong don va tong doanh thu.
 
-## 3. Database (PostgreSQL)
-Dùng 5 bảng:
-- `users`
-- `categories`
-- `products`
-- `orders`
-- `order_items`
+## 3. Rule nghiep vu
+- Gia tri don hang = tong (so luong * don gia) cua order_items.
+- Khong cho dat hang neu stock_qty khong du.
+- Tao don hang bat buoc dung transaction (BEGIN/COMMIT/ROLLBACK).
+- API quan tri yeu cau JWT role = admin.
+- User chi duoc xem don cua chinh minh.
 
-Quan hệ:
-- `categories (1) - (N) products`
-- `users (1) - (N) orders`
-- `orders (1) - (N) order_items`
-- `products (1) - (N) order_items`
+## 4. Mapping database (5 bang)
+- users 1-N orders
+- categories 1-N products
+- orders 1-N order_items
+- products 1-N order_items
 
-## 4. Luồng transaction khi tạo order
-1. `BEGIN`
-2. Kiểm tra tồn kho từng sản phẩm
-3. Tạo record `orders`
-4. Tạo các record `order_items`
-5. Trừ tồn kho `products.stock_qty`
-6. `COMMIT`
-7. Lỗi bất kỳ bước nào: `ROLLBACK`
-
-## 5. API chính
-- Auth: `register`, `login`, `me`
-- Products: `GET list/search`, `GET detail`, `POST`, `PUT`, `DELETE`
-- Orders: `POST create`, `GET my`, `GET all(admin)`
-- Stats: `GET overview`
-- Upload: `POST /api/upload/image`
-
-## 6. Trạng thái trả về
-- `200`, `201`, `400`, `401`, `403`, `404`, `500`
-
-## 7. Deliverables đã thêm vào source
-- DB scripts: `backend/sql/schema.sql`, `backend/sql/seed.sql`
-- Backend source: `backend/*`
-- Postman: `backend/postman/pc-store.postman_collection.json`
-- Docker: `backend/Dockerfile`, `docker-compose.yml`
-- API docs: `/api-docs` (Swagger)
-
-## 8. UI
-- Giữ nguyên template UI hiện tại theo Figma của dự án.
-- Tích hợp API theo service layer để không phá vỡ layout cũ.
+## 5. Mapping API bat buoc
+- Auth: register, login, profile
+- Product: list/search, create, update, delete
+- Order: create (transaction), list my orders, list all (admin)
+- Stats: overview (admin)
+- Upload: image upload local /uploads

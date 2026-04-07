@@ -1,162 +1,246 @@
-import { formatCurrency } from "../../data/storeData";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { fetchAdminOrders, patchAdminOrderStatus } from "../../services/orderService";
+import { notifyError, notifySuccess } from "../../utils/notify";
+import { formatVnd } from "../../utils/currency";
 import "./AdminPages.css";
 
-const summaryCards = [
-  {
-    label: "Don can xu ly ngay",
-    value: "9",
-    note: "Can chia theo CSKH, kho va giao van.",
-  },
-  {
-    label: "Dang giao",
-    value: "14",
-    note: "Can theo doi cac moc giao trong 2h / trong ngay.",
-  },
-  {
-    label: "Da hoan tat",
-    value: "42",
-    note: "Co the day tiep review, upsell va CSKH sau ban.",
-  },
+const ORDER_STATUS_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "processing", label: "Processing" },
+  { value: "shipping", label: "Shipping" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
-const orders = [
-  {
-    id: "100901",
-    customer: "Nguyen Van A",
-    total: 39_990_000,
-    status: "pending",
-    note: "Bo PC gaming + chuot. Khach doi giao sau 18h.",
-    steps: [
-      { id: "received", title: "Tiep nhan", text: "Da tao don.", active: true },
-      { id: "verify", title: "Xac nhan", text: "Dang doi goi lai.", active: true },
-      { id: "pack", title: "Dong goi", text: "Chua bat dau.", active: false },
-      { id: "ship", title: "Giao hang", text: "Cho lich ship.", active: false },
-    ],
-  },
-  {
-    id: "100898",
-    customer: "Tran Minh K",
-    total: 17_490_000,
-    status: "shipping",
-    note: "Monitor da xuat kho. Don co yeu cau goi truoc khi giao.",
-    steps: [
-      { id: "received", title: "Tiep nhan", text: "Da tao don.", active: true },
-      { id: "verify", title: "Xac nhan", text: "Da xong.", active: true },
-      { id: "pack", title: "Dong goi", text: "Da xuat kho.", active: true },
-      { id: "ship", title: "Giao hang", text: "Shipper dang giao.", active: true },
-    ],
-  },
-  {
-    id: "100889",
-    customer: "Le Quoc P",
-    total: 58_700_000,
-    status: "done",
-    note: "Don workstation da giao xong, cho CSKH xin feedback.",
-    steps: [
-      { id: "received", title: "Tiep nhan", text: "Da tao don.", active: true },
-      { id: "verify", title: "Xac nhan", text: "Da xong.", active: true },
-      { id: "pack", title: "Dong goi", text: "Da xong.", active: true },
-      { id: "ship", title: "Giao hang", text: "Da hoan tat.", active: true },
-    ],
-  },
-];
+const formatStatusLabel = (status = "") => {
+  const item = ORDER_STATUS_OPTIONS.find((entry) => entry.value === status);
+  return item?.label || status || "N/A";
+};
 
 export default function OrderManager() {
+  const { token } = useAuth();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [orders, setOrders] = useState([]);
+  const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
+  const [loading, setLoading] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [draftStatusByOrderId, setDraftStatusByOrderId] = useState({});
+
+  useEffect(() => {
+    const handle = setTimeout(async () => {
+      if (!token) return;
+
+      try {
+        setLoading(true);
+        const result = await fetchAdminOrders(token, {
+          search,
+          status,
+          page,
+          limit: 10,
+        });
+
+        const orderRows = result?.data || [];
+        setOrders(orderRows);
+        setPagination(result?.pagination || { totalPages: 1, total: 0 });
+        setDraftStatusByOrderId((prev) => {
+          const next = { ...prev };
+          orderRows.forEach((item) => {
+            if (!next[item.id]) next[item.id] = item.status;
+          });
+          return next;
+        });
+      } catch (error) {
+        notifyError(error, "Không tải được đơn hàng");
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(handle);
+  }, [token, search, status, page]);
+
+  const hasOrderRows = orders.length > 0;
+
+  const totalPages = useMemo(() => Number(pagination.totalPages || 1), [pagination.totalPages]);
+
+  const handleSaveStatus = async (orderId) => {
+    const nextStatus = String(draftStatusByOrderId[orderId] || "").trim().toLowerCase();
+    if (!nextStatus) return;
+
+    try {
+      setUpdatingOrderId(orderId);
+      await patchAdminOrderStatus(orderId, nextStatus, token);
+      setOrders((prev) =>
+        prev.map((row) => (Number(row.id) === Number(orderId) ? { ...row, status: nextStatus } : row))
+      );
+      notifySuccess("Đã cập nhật trạng thái đơn hàng.");
+    } catch (error) {
+      notifyError(error, "Không cập nhật được trạng thái đơn");
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   return (
     <div className="admin-page">
       <section className="admin-hero">
         <div className="admin-hero-header">
           <div>
             <p className="admin-kicker">Order operations</p>
-            <h1>Quan ly don hang theo dang board de de uu tien xu ly.</h1>
-            <p>
-              Trang nay da duoc doi tu table placeholder sang bo cuc co KPI, chip
-              loc va tung order card co progress rieng, de admin nhin la thay ngay
-              don nao can cham truoc.
-            </p>
-          </div>
-
-          <div className="admin-chip-row">
-            <span className="admin-chip is-active">Tat ca</span>
-            <span className="admin-chip">Cho xu ly</span>
-            <span className="admin-chip">Dang giao</span>
-            <span className="admin-chip">Da hoan tat</span>
+            <h1>Quản lý đơn hàng theo dữ liệu API.</h1>
+            <p>Lọc, tìm kiếm, phân trang và cập nhật trạng thái trực tiếp.</p>
           </div>
         </div>
       </section>
 
-      <section className="admin-overview-grid">
-        {summaryCards.map((card) => (
-          <article key={card.label} className="admin-overview-card">
-            <p>{card.label}</p>
-            <strong>{card.value}</strong>
-            <span>{card.note}</span>
-          </article>
-        ))}
-      </section>
+      <section className="admin-product-panel">
+        <div className="admin-product-filters">
+          <input
+            type="text"
+            className="admin-filter-select"
+            placeholder="Tìm theo tên/email/mã đơn"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+          />
 
-      <section className="admin-manager-grid">
-        {orders.map((order) => (
-          <article key={order.id} className="admin-order-card">
-            <div className="admin-order-head">
-              <div>
-                <h3>Don #{order.id}</h3>
-                <p>{order.customer} - {order.note}</p>
-              </div>
-              <span className={`admin-status ${order.status}`}>
-                {order.status === "pending" && "Chờ xử lý"}
-                {order.status === "shipping" && "Đang giao"}
-                {order.status === "done" && "Hoàn tất"}
-              </span>
-            </div>
+          <select
+            className="admin-filter-select"
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">Tất cả trạng thái</option>
+            {ORDER_STATUS_OPTIONS.map((item) => (
+              <option key={`filter-status-${item.value}`} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <div className="admin-meta-grid" style={{ marginTop: "12px" }}>
-              <article className="admin-meta-card">
-                <p>Khach hang</p>
-                <strong>{order.customer}</strong>
-                <span>Can kiem tra lai thong tin giao nhan neu don dang mo.</span>
-              </article>
-              <article className="admin-meta-card">
-                <p>Tong tien</p>
-                <strong>{formatCurrency(order.total)}</strong>
-                <span>Gia tri tam tinh tren don.</span>
-              </article>
-              <article className="admin-meta-card">
-                <p>Hanh dong</p>
-                <strong>
-                  {order.status === "pending"
-                    ? "Goi xac nhan"
-                    : order.status === "shipping"
-                      ? "Theo doi giao hang"
-                      : "Xin feedback"}
-                </strong>
-                <span>Buoc uu tien de xu ly tiep theo.</span>
-              </article>
-            </div>
+        <div className="admin-product-table-wrap">
+          <table className="admin-product-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>KHÁCH HÀNG</th>
+                <th>EMAIL</th>
+                <th>TỔNG TIỀN</th>
+                <th>TRẠNG THÁI</th>
+                <th>NGÀY TẠO</th>
+                <th>THAO TÁC</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="admin-table-empty">
+                    Đang tải dữ liệu...
+                  </td>
+                </tr>
+              ) : null}
 
-            <div className="admin-order-progress" style={{ marginTop: "12px" }}>
-              {order.steps.map((step, index) => (
-                <article
-                  key={`${order.id}-${step.id}`}
-                  className={`admin-order-step ${step.active ? "is-active" : ""}`}
-                >
-                  <strong>{index + 1}</strong>
-                  <h4>{step.title}</h4>
-                  <p>{step.text}</p>
-                </article>
-              ))}
-            </div>
+              {!loading && !hasOrderRows ? (
+                <tr>
+                  <td colSpan={7} className="admin-table-empty">
+                    Không có đơn hàng.
+                  </td>
+                </tr>
+              ) : null}
 
-            <div className="admin-order-actions" style={{ marginTop: "12px" }}>
-              <button type="button" className="admin-link-button">
-                Mo chi tiet don
-              </button>
-              <button type="button" className="admin-link-button-outline">
-                Cap nhat trang thai
-              </button>
-            </div>
-          </article>
-        ))}
+              {!loading
+                ? orders.map((order) => {
+                    const currentStatus = String(order.status || "").toLowerCase();
+                    const draftStatus = String(draftStatusByOrderId[order.id] || currentStatus);
+                    const changed = draftStatus !== currentStatus;
+                    const isSubmitting = Number(updatingOrderId) === Number(order.id);
+
+                    return (
+                      <tr key={order.id}>
+                        <td>#{order.id}</td>
+                        <td>{order.full_name}</td>
+                        <td>{order.email}</td>
+                        <td>{formatVnd(order.total_amount)}</td>
+                        <td>
+                          <span
+                            className={`admin-status ${
+                              currentStatus === "completed"
+                                ? "done"
+                                : currentStatus === "cancelled"
+                                ? "cancelled"
+                                : currentStatus === "pending"
+                                ? "pending"
+                                : "shipping"
+                            }`}
+                          >
+                            {formatStatusLabel(currentStatus)}
+                          </span>
+                        </td>
+                        <td>{new Date(order.created_at).toLocaleString("vi-VN")}</td>
+                        <td style={{ minWidth: 210 }}>
+                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <select
+                              className="admin-filter-select"
+                              value={draftStatus}
+                              onChange={(event) =>
+                                setDraftStatusByOrderId((prev) => ({
+                                  ...prev,
+                                  [order.id]: event.target.value,
+                                }))
+                              }
+                              style={{ height: 34, fontSize: 13, minWidth: 120 }}
+                              disabled={isSubmitting}
+                            >
+                              {ORDER_STATUS_OPTIONS.map((item) => (
+                                <option key={`row-status-${order.id}-${item.value}`} value={item.value}>
+                                  {item.label}
+                                </option>
+                              ))}
+                            </select>
+
+                            <button
+                              type="button"
+                              className="admin-btn"
+                              onClick={() => handleSaveStatus(order.id)}
+                              disabled={!changed || isSubmitting}
+                              style={{ padding: "6px 10px", fontSize: 11 }}
+                            >
+                              {isSubmitting ? "Đang lưu..." : "Lưu"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                : null}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="admin-pagination" style={{ marginTop: 12 }}>
+          <button type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page === 1}>
+            {"<"}
+          </button>
+          <button type="button" className="is-active">
+            {page}
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={page >= totalPages}
+          >
+            {">"}
+          </button>
+          <span style={{ marginLeft: 8 }}>Tổng: {pagination.total || 0}</span>
+        </div>
       </section>
     </div>
   );

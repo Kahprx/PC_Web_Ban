@@ -156,6 +156,12 @@
   color: #335e9c;
 }
 
+.admin-status.cancelled {
+  border-color: #d5a7a7;
+  background: #fff0f0;
+  color: #9b3d3d;
+}
+
 .admin-status.done {
   border-color: #96c9a2;
   background: #edfbef;
@@ -803,6 +809,29 @@
   color: #fff;
 }
 
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-pagination button {
+  border: 1px solid #c7ae95;
+  border-radius: 999px;
+  background: #f4ebdf;
+  color: #62482f;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.admin-pagination button.is-active {
+  background: #b99773;
+  color: #fff;
+}
+
 @media (max-width: 1200px) {
   .admin-product-header h1 {
     font-size: 30px;
@@ -877,5 +906,241 @@
   .admin-recent-head,
   .admin-order-head {
     display: grid;
+  }
+}
+
+.admin-support-chat {
+  border: 1px solid #d8c8b2;
+  border-radius: 12px;
+  background: #f5ede1;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.admin-support-sidebar {
+  border: 1px solid #cfb99f;
+  border-radius: 10px;
+  background: #f8f1e6;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 580px;
+}
+
+.admin-support-search {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-support-search span {
+  font-size: 12px;
+  font-weight: 800;
+  color: #473626;
+}
+
+.admin-support-search input {
+  height: 36px;
+  border: 1px solid #ccb394;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+.admin-support-session-list {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-support-session-item {
+  border: 1px solid #d3c0a5;
+  border-radius: 10px;
+  background: #fffdf9;
+  text-align: left;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.admin-support-session-item.is-active {
+  border-color: #b68856;
+  background: #f3e3cf;
+}
+
+.admin-support-session-item strong {
+  font-size: 13px;
+  color: #1d1d1d;
+}
+
+.admin-support-session-item small {
+  font-size: 11px;
+  color: #5f5548;
+  font-weight: 700;
+}
+
+.admin-support-session-item p {
+  margin: 0;
+  font-size: 12px;
+  color: #2b2b2b;
+  line-height: 1.4;
+}
+
+.admin-support-session-item em {
+  font-size: 11px;
+  color: #80644a;
+  font-style: normal;
+}
+
+.admin-support-chat-panel {
+  border: 1px solid #ccb99f;
+  border-radius: 10px;
+  background: #fcf8f1;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 580px;
+}
+
+.admin-support-chat-head {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e1d0b8;
+}
+
+.admin-support-chat-head h2 {
+  margin: 0;
+  font-size: 21px;
+  color: #1f1f1f;
+}
+
+.admin-support-chat-head p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #5d4f40;
+}
+
+.admin-support-message-list {
+  padding: 10px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-support-message {
+  max-width: min(80%, 620px);
+  border-radius: 10px;
+  border: 1px solid #cdb99f;
+  background: #fffdf9;
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.admin-support-message.is-user {
+  align-self: flex-start;
+}
+
+.admin-support-message.is-bot {
+  align-self: center;
+  background: #f0f4fb;
+  border-color: #b8cadf;
+}
+
+.admin-support-message.is-admin {
+  align-self: flex-end;
+  background: #f3e2cd;
+  border-color: #bf9764;
+}
+
+.admin-support-message strong {
+  font-size: 12px;
+  color: #2c2c2c;
+}
+
+.admin-support-message p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #222;
+  white-space: pre-wrap;
+}
+
+.admin-support-message small {
+  font-size: 11px;
+  color: #6d5b48;
+}
+
+.admin-support-compose {
+  padding: 10px;
+  border-top: 1px solid #e1d0b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-support-compose input {
+  flex: 1;
+  height: 38px;
+  border: 1px solid #ccb394;
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 13px;
+  outline: none;
+}
+
+[data-theme="dark"] .admin-support-chat,
+[data-theme="dark"] .admin-support-sidebar,
+[data-theme="dark"] .admin-support-chat-panel {
+  background: #1a212c;
+  border-color: #334055;
+}
+
+[data-theme="dark"] .admin-support-search span,
+[data-theme="dark"] .admin-support-chat-head h2,
+[data-theme="dark"] .admin-support-chat-head p,
+[data-theme="dark"] .admin-support-session-item strong,
+[data-theme="dark"] .admin-support-session-item small,
+[data-theme="dark"] .admin-support-session-item p,
+[data-theme="dark"] .admin-support-session-item em,
+[data-theme="dark"] .admin-support-message strong,
+[data-theme="dark"] .admin-support-message p,
+[data-theme="dark"] .admin-support-message small {
+  color: #ebe3d7;
+}
+
+[data-theme="dark"] .admin-support-search input,
+[data-theme="dark"] .admin-support-compose input,
+[data-theme="dark"] .admin-support-session-item,
+[data-theme="dark"] .admin-support-message {
+  background: #232d3c;
+  border-color: #3d4b63;
+  color: #ebe3d7;
+}
+
+[data-theme="dark"] .admin-support-message.is-admin {
+  background: #3b2c1f;
+  border-color: #6f5234;
+}
+
+[data-theme="dark"] .admin-support-message.is-bot {
+  background: #243245;
+  border-color: #415a77;
+}
+
+@media (max-width: 1180px) {
+  .admin-support-chat {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-support-sidebar,
+  .admin-support-chat-panel {
+    min-height: 420px;
   }
 }
