@@ -49,6 +49,47 @@ const COMPONENT_BLOCK_KEYWORDS = [
   "bo pc",
   "build pc",
 ];
+const MONITOR_BLOCK_KEYWORDS = [
+  "card man hinh",
+  "vga",
+  "gpu",
+  "rtx",
+  "gtx",
+  "radeon",
+  "geforce",
+  "vo case",
+  "case pc",
+  "mid tower",
+  "full tower",
+  "khong gom man hinh",
+  "khong bao gom man hinh",
+  "mainboard",
+  "motherboard",
+  "ram",
+  "ssd",
+  "hdd",
+  "psu",
+  "nguon",
+  "tan nhiet",
+];
+
+const MONITOR_SIGNAL_KEYWORDS = [
+  "man hinh",
+  "monitor",
+  "display",
+  "ips",
+  "oled",
+  "va",
+  "fhd",
+  "qhd",
+  "uhd",
+  "2k",
+  "4k",
+  "hz",
+  "hdmi",
+  "displayport",
+  "usb-c",
+];
 
 const normalizeText = (value) =>
   String(value || "")
@@ -578,7 +619,7 @@ const BUILD_PARTS = [
     key: "monitor",
     label: "MÀN HÌNH",
     icon: partIcons.monitor,
-    apiQueries: [{ search: "màn hình" }, { search: "monitor" }],
+    apiQueries: [{ categoryGroup: "man-hinh" }],
   },
   {
     key: "gear",
@@ -743,9 +784,12 @@ const isPsuWattInRange = (row) => {
 const isMonitorItem = (row) => {
   const text = getRowText(row);
   const category = getRowCategory(row);
+  if (isComponentBlockedRow(row)) return false;
+  if (hasPartMarker(row, "gpu") || hasPartMarker(row, "case")) return false;
   if (includesAny(category, ["laptop", "macbook"])) return false;
+  if (includesAny(text, MONITOR_BLOCK_KEYWORDS)) return false;
   if (includesAny(category, ["man-hinh", "monitor"])) return true;
-  return includesAny(text, ["man hinh", "monitor", "ips", "oled", "qhd", "uhd", "fhd", "hz"]);
+  return includesAny(text, MONITOR_SIGNAL_KEYWORDS);
 };
 
 const isGearItem = (row) => {

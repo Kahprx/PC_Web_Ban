@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { changePasswordApi } from "../../services/authService";
 import { notifyError, notifySuccess } from "../../utils/notify";
@@ -6,26 +6,26 @@ import "../shared/PageBlocks.css";
 
 const securityTips = [
   {
-    title: "Mật khẩu tối thiểu 8 ký tự",
-    text: "Nên có chữ hoa, chữ thường, số và ký tự đặc biệt để tăng độ an toàn.",
+    title: "Máº­t kháº©u tá»‘i thiá»ƒu 8 kÃ½ tá»±",
+    text: "NÃªn cÃ³ chá»¯ hoa, chá»¯ thÆ°á»ng, sá»‘ vÃ  kÃ½ tá»± Ä‘áº·c biá»‡t Ä‘á»ƒ tÄƒng Ä‘á»™ an toÃ n.",
   },
   {
-    title: "Không dùng lại mật khẩu cũ",
-    text: "Tránh rò rỉ từ dịch vụ khác ảnh hưởng đến tài khoản mua hàng.",
+    title: "KhÃ´ng dÃ¹ng láº¡i máº­t kháº©u cÅ©",
+    text: "TrÃ¡nh rÃ² rá»‰ tá»« dá»‹ch vá»¥ khÃ¡c áº£nh hÆ°á»Ÿng Ä‘áº¿n tÃ i khoáº£n mua hÃ ng.",
   },
   {
-    title: "Đổi mật khẩu sau khi dùng máy lạ",
-    text: "Nếu vừa đăng nhập ở showroom, máy công ty hoặc máy bạn bè, hãy đổi ngay.",
+    title: "Äá»•i máº­t kháº©u sau khi dÃ¹ng mÃ¡y láº¡",
+    text: "Náº¿u vá»«a Ä‘Äƒng nháº­p á»Ÿ showroom, mÃ¡y cÃ´ng ty hoáº·c mÃ¡y báº¡n bÃ¨, hÃ£y Ä‘á»•i ngay.",
   },
   {
-    title: "Kiểm tra email thông báo",
-    text: "Email là nơi nhận cảnh báo khi tài khoản có thay đổi bất thường.",
+    title: "Kiá»ƒm tra email thÃ´ng bÃ¡o",
+    text: "Email lÃ  nÆ¡i nháº­n cáº£nh bÃ¡o khi tÃ i khoáº£n cÃ³ thay Ä‘á»•i báº¥t thÆ°á»ng.",
   },
 ];
 
 const deviceRows = [
-  { label: "Chrome / Windows", value: "Đang hoạt động tại TP.HCM" },
-  { label: "Safari / iPhone", value: "Lần truy cập gần nhất 2 giờ trước" },
+  { label: "Chrome / Windows", value: "Äang hoáº¡t Ä‘á»™ng táº¡i TP.HCM" },
+  { label: "Safari / iPhone", value: "Láº§n truy cáº­p gáº§n nháº¥t 2 giá» trÆ°á»›c" },
 ];
 
 export default function ChangePassword() {
@@ -34,7 +34,7 @@ export default function ChangePassword() {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-    note: "Sau khi đổi mật khẩu, nên đăng xuất khỏi các phiên cũ nếu hệ thống hỗ trợ.",
+    note: "Sau khi Ä‘á»•i máº­t kháº©u, nÃªn Ä‘Äƒng xuáº¥t khá»i cÃ¡c phiÃªn cÅ© náº¿u há»‡ thá»‘ng há»— trá»£.",
   });
   const [saving, setSaving] = useState(false);
 
@@ -60,12 +60,12 @@ export default function ChangePassword() {
     event.preventDefault();
 
     if (!token) {
-      notifyError(new Error("Bạn cần đăng nhập backend để đổi mật khẩu"), "Chưa có phiên backend");
+      notifyError(new Error("Báº¡n cáº§n Ä‘Äƒng nháº­p backend Ä‘á»ƒ Ä‘á»•i máº­t kháº©u"), "ChÆ°a cÃ³ phiÃªn backend");
       return;
     }
 
     if (form.newPassword !== form.confirmPassword) {
-      notifyError(new Error("Xác nhận mật khẩu không khớp"), "Dữ liệu không hợp lệ");
+      notifyError(new Error("XÃ¡c nháº­n máº­t kháº©u khÃ´ng khá»›p"), "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡");
       return;
     }
 
@@ -79,7 +79,7 @@ export default function ChangePassword() {
         token
       );
 
-      notifySuccess("Đổi mật khẩu thành công");
+      notifySuccess("Äá»•i máº­t kháº©u thÃ nh cÃ´ng");
       setForm((prev) => ({
         ...prev,
         currentPassword: "",
@@ -87,7 +87,7 @@ export default function ChangePassword() {
         confirmPassword: "",
       }));
     } catch (error) {
-      notifyError(error, "Đổi mật khẩu thất bại");
+      notifyError(error, "Äá»•i máº­t kháº©u tháº¥t báº¡i");
     } finally {
       setSaving(false);
     }
@@ -98,28 +98,28 @@ export default function ChangePassword() {
       <section className="page-hero-card">
         <div className="page-hero-copy">
           <p className="page-eyebrow">Security</p>
-          <h1 className="page-title">Đổi mật khẩu theo luồng bảo mật rõ ràng.</h1>
+          <h1 className="page-title">Äá»•i máº­t kháº©u theo luá»“ng báº£o máº­t rÃµ rÃ ng.</h1>
           <p className="page-subtitle">
-            Form đổi mật khẩu đã kết nối API backend, kiểm tra mật khẩu hiện tại trước khi cập nhật.
+            Form Ä‘á»•i máº­t kháº©u Ä‘Ã£ káº¿t ná»‘i API backend, kiá»ƒm tra máº­t kháº©u hiá»‡n táº¡i trÆ°á»›c khi cáº­p nháº­t.
           </p>
         </div>
       </section>
 
       <section className="page-highlight-grid">
         <article className="page-highlight-card">
-          <p>Mục tiêu</p>
-          <strong>Mật khẩu mạnh</strong>
-          <span>Ưu tiên bảo mật thay vì chỉ đổi mật khẩu cho xong.</span>
+          <p>Má»¥c tiÃªu</p>
+          <strong>Máº­t kháº©u máº¡nh</strong>
+          <span>Æ¯u tiÃªn báº£o máº­t thay vÃ¬ chá»‰ Ä‘á»•i máº­t kháº©u cho xong.</span>
         </article>
         <article className="page-highlight-card">
-          <p>Khuyến nghị</p>
-          <strong>Không dùng lại</strong>
-          <span>Mật khẩu cũ không nên xuất hiện ở bất kỳ dịch vụ nào khác.</span>
+          <p>Khuyáº¿n nghá»‹</p>
+          <strong>KhÃ´ng dÃ¹ng láº¡i</strong>
+          <span>Máº­t kháº©u cÅ© khÃ´ng nÃªn xuáº¥t hiá»‡n á»Ÿ báº¥t ká»³ dá»‹ch vá»¥ nÃ o khÃ¡c.</span>
         </article>
         <article className="page-highlight-card">
-          <p>Thông báo</p>
-          <strong>Email hoạt động</strong>
-          <span>Hệ thống gửi phản hồi API ngay khi đổi mật khẩu thành công.</span>
+          <p>ThÃ´ng bÃ¡o</p>
+          <strong>Email hoáº¡t Ä‘á»™ng</strong>
+          <span>Há»‡ thá»‘ng gá»­i pháº£n há»“i API ngay khi Ä‘á»•i máº­t kháº©u thÃ nh cÃ´ng.</span>
         </article>
       </section>
 
@@ -129,48 +129,48 @@ export default function ChangePassword() {
             <div className="page-panel-header">
               <div>
                 <p className="page-panel-kicker">Password form</p>
-                <h2>Cập nhật thông tin bảo mật</h2>
+                <h2>Cáº­p nháº­t thÃ´ng tin báº£o máº­t</h2>
               </div>
             </div>
 
             <form className="page-form" style={{ marginTop: "12px" }} onSubmit={handleSubmit}>
               <div className="page-form-grid">
                 <div className="page-field full">
-                  <label>Mật khẩu hiện tại</label>
+                  <label>Máº­t kháº©u hiá»‡n táº¡i</label>
                   <input
                     type="password"
-                    placeholder="Nhập mật khẩu hiện tại"
+                    placeholder="Nháº­p máº­t kháº©u hiá»‡n táº¡i"
                     value={form.currentPassword}
                     onChange={handleChange("currentPassword")}
                   />
                 </div>
                 <div className="page-field">
-                  <label>Mật khẩu mới</label>
+                  <label>Máº­t kháº©u má»›i</label>
                   <input
                     type="password"
-                    placeholder="Nhập mật khẩu mới"
+                    placeholder="Nháº­p máº­t kháº©u má»›i"
                     value={form.newPassword}
                     onChange={handleChange("newPassword")}
                   />
                 </div>
                 <div className="page-field">
-                  <label>Xác nhận mật khẩu mới</label>
+                  <label>XÃ¡c nháº­n máº­t kháº©u má»›i</label>
                   <input
                     type="password"
-                    placeholder="Nhập lại mật khẩu mới"
+                    placeholder="Nháº­p láº¡i máº­t kháº©u má»›i"
                     value={form.confirmPassword}
                     onChange={handleChange("confirmPassword")}
                   />
                 </div>
                 <div className="page-field full">
-                  <label>Ghi chú bảo mật</label>
+                  <label>Ghi chÃº báº£o máº­t</label>
                   <textarea rows={3} value={form.note} onChange={handleChange("note")} />
                 </div>
               </div>
 
               <div className="page-actions">
                 <button type="submit" className="page-btn" disabled={!canSubmit || saving}>
-                  {saving ? "ĐANG CẬP NHẬT..." : "Cập nhật mật khẩu"}
+                  {saving ? "ÄANG Cáº¬P NHáº¬T..." : "Cáº­p nháº­t máº­t kháº©u"}
                 </button>
               </div>
             </form>
@@ -180,7 +180,7 @@ export default function ChangePassword() {
             <div className="page-panel-header">
               <div>
                 <p className="page-panel-kicker">Best practices</p>
-                <h2>Checklist trước khi lưu</h2>
+                <h2>Checklist trÆ°á»›c khi lÆ°u</h2>
               </div>
             </div>
 
@@ -200,7 +200,7 @@ export default function ChangePassword() {
             <div className="page-panel-header">
               <div>
                 <p className="page-panel-kicker">Recent sessions</p>
-                <h2>Phiên truy cập gần đây</h2>
+                <h2>PhiÃªn truy cáº­p gáº§n Ä‘Ã¢y</h2>
               </div>
             </div>
 
@@ -214,18 +214,12 @@ export default function ChangePassword() {
             </div>
 
             <div className="page-summary-total">
-              <p>Lưu ý</p>
+              <p>LÆ°u Ã½</p>
               <strong>Session review</strong>
-              <span>Nếu thấy thiết bị lạ, hãy đổi mật khẩu ngay và đăng xuất các phiên cũ.</span>
+              <span>Náº¿u tháº¥y thiáº¿t bá»‹ láº¡, hÃ£y Ä‘á»•i máº­t kháº©u ngay vÃ  Ä‘Äƒng xuáº¥t cÃ¡c phiÃªn cÅ©.</span>
             </div>
           </section>
 
-          <section className="page-support-card">
-            <h2 className="page-title">Trạng thái kết nối</h2>
-            <p className="page-subtitle">
-              {token ? "Form đổi mật khẩu đang hoạt động với API backend." : "Bạn cần đăng nhập backend để thao tác."}
-            </p>
-          </section>
         </div>
       </section>
     </div>

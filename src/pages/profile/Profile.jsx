@@ -260,10 +260,6 @@ export default function Profile() {
                 <span>{safeAccount}</span>
               </div>
               <div className="page-kv-row">
-                <p>Trạng thái</p>
-                <span>{token ? "Đồng bộ backend" : "Local demo"}</span>
-              </div>
-              <div className="page-kv-row">
                 <p>Lần đăng nhập</p>
                 <span>{lastLogin}</span>
               </div>
@@ -279,15 +275,6 @@ export default function Profile() {
                 </article>
               ))}
             </div>
-          </section>
-
-          <section className="page-support-card">
-            <h2 className="page-title">Đồng bộ hồ sơ</h2>
-            <p className="page-subtitle">
-              {token
-                ? "Thông tin hồ sơ đã kết nối API backend và lưu theo tài khoản."
-                : "Bạn cần đăng nhập backend để lưu hồ sơ thật."}
-            </p>
           </section>
         </div>
       </section>
