@@ -1,0 +1,76 @@
+Issue Type,Epic Name,Summary,Priority
+Epic,Auth,Quản lý Tài khoản (Auth),High
+Story,,Story 1.1: Đăng nhập & Đăng ký,High
+Task,,Thiết kế Form Login/Register,High
+Task,,Cài đặt API Auth /login /register,High
+Story,,Story 1.2: User Profile,Medium
+Task,,Dựng layout Profile cá nhân người dùng,Medium
+Task,,Viết API lấy và cập nhật Avatar/Thông tin,Low
+Epic,Product,Sản Phẩm (Product),High
+Story,,Story 2.1: Danh sách sản phẩm,High
+Task,,Code giao diện Grid view Homepage,High
+Task,,Schema DB Table Product & DTO,High
+Story,,Story 2.2: Chi tiết sản phẩm,High
+Task,,Render thông tin Mô tả và Giá,High
+Task,,API Truy xuất chi tiết qua ID,High
+Epic,Cart,Giỏ Hàng (Cart),High
+Story,,Story 3.1: Quản lý trạng thái Giỏ hàng,High
+Task,,Setup Zustand/Redux lưu state Giỏ,High
+Task,,API lưu phiên giỏ hàng vào DB,Medium
+Story,,Story 3.2: Thêm/Xoá Sản Phẩm,High
+Task,,Nút Add-to-cart và Toast alert,High
+Task,,API cộng trừ số lượng SP,High
+Epic,Order,Đơn Hàng (Order),High
+Story,,Story 4.1: Nhập thông tin giao hàng,High
+Task,,UI Form Order Billing Address,High
+Task,,Logic Controller tạo Object Order,High
+Story,,Story 4.2: Lịch sử Đơn hàng,Medium
+Task,,Giao diện Tracking (Pending Shipping),Medium
+Task,,View SQL lấy lịch sử đơn theo User,Low
+Epic,Payment,Thanh Toán (Payment),High
+Story,,Story 5.1: Cổng Payment API,High
+Task,,Mockup phương thức Cod / Transfer,High
+Task,,Tích hợp Stripe / VNPay Backend,High
+Story,,Story 5.2: Xử lý Giao Dịch,High
+Task,,Xử lý UI báo lỗi khi thẻ bị từ chối,Medium
+Task,,Webhook lắng nghe Callback thanh toán,High
+Epic,Review,Đánh Giá Review,Medium
+Story,,Story 6.1: Comment và Star Rating,Medium
+Task,,UI Form Viết Đánh giá 5 sao,Medium
+Task,,Schema chứa Rating và Relationship User,Medium
+Story,,Story 6.2: Kiểm duyệt,Medium
+Task,,UI Danh sách Comment bên dưới sản phẩm,Low
+Task,,Validate User phải Đã mua mới đc bình luận,High
+Epic,Search,Tìm Kiếm Filter,High
+Story,,Story 7.1: Thanh Search,High
+Task,,Input Search với auto-suggest,High
+Task,,Xử lý hàm Fulltext Search,High
+Story,,Story 7.2: Lọc Filter nâng cao,Medium
+Task,,UI Filter theo danh mục Lap PC,Medium
+Task,,Logic Backend query nhiều biến,Medium
+Epic,Dashboard,Admin Dashboard,High
+Story,,Story 8.1: Thống kê doanh thu,Medium
+Task,,Component Chart.js biểu đồ doanh thu,Low
+Task,,API Tính tổng doanh thu theo tháng,Medium
+Story,,Story 8.2: Quản lý Backend,High
+Task,,Giao diện CRUD Thêm sửa xoá SP,High
+Task,,Phân quyền Authorization JWT Admin,High
+Epic,Marketing,Marketing Banner,Medium
+Story,,Story 9.1: Banner Trang Chủ,Medium
+Task,,Dựng Slider Banner chạy tự động,Medium
+Task,,API GET danh sách ảnh banner,Low
+Story,,Story 9.2: Áp dụng Voucher,High
+Task,,UI Input Mã Giảm Giá,Medium
+Task,,Logic check điều kiện Voucher hợp lý,High
+Epic,Core,Hệ thống Core,High
+Story,,Story 10.1: Email Notify,Medium
+Task,,UI Popup đăng ký thành công,Low
+Task,,Cấu hình Nodemailer gửi Email Receipt,High
+Story,,Story 10.2: Deploy,High
+Task,,Cấu hình Cors Header bảo vệ,High
+Task,,Đóng gói hệ thống lên Cloud Firebase AWS,High
+Bug,,BUG 1: Form Đăng Ký ko báo đỏ khi trống Email,High
+Bug,,BUG 2: Add SL âm vô Giỏ Hàng bị lỗi,High
+Bug,,BUG 3: API Đăng nhập 401 văng trắng trang,High
+Bug,,BUG 4: Tính sai tiền áp Voucher,High
+Bug,,BUG 5: Hình Size siêu nặng up sập Server,High
