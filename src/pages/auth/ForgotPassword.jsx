@@ -14,6 +14,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [previewResetUrl, setPreviewResetUrl] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -28,8 +29,10 @@ export default function ForgotPassword() {
       setLoading(true);
       const result = await forgotPasswordApi({ email: safeEmail });
       const successMessage = result?.message || "Nếu email tồn tại, hệ thống đã gửi link đặt lại mật khẩu.";
+      const previewLink = String(result?.data?.previewResetUrl || "").trim();
 
       setMessage(successMessage);
+      setPreviewResetUrl(previewLink);
       notifySuccess(successMessage);
     } catch (error) {
       notifyError(error, "Gửi yêu cầu đặt lại mật khẩu thất bại");
@@ -91,6 +94,15 @@ export default function ForgotPassword() {
               <div className="auth-divider" />
               <div className="auth-note">{message}</div>
             </>
+          ) : null}
+
+          {previewResetUrl ? (
+            <div className="auth-note" style={{ marginTop: "10px" }}>
+              <strong>Link test local:</strong>{" "}
+              <a href={previewResetUrl} target="_blank" rel="noreferrer">
+                {previewResetUrl}
+              </a>
+            </div>
           ) : null}
 
           <div className="auth-alt">
