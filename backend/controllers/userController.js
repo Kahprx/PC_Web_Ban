@@ -191,6 +191,12 @@ const forgotPassword = asyncHandler(async (req, res) => {
   const rawEmail = req.body?.email ?? req.query?.email ?? "";
   const safeEmail = String(rawEmail).trim().toLowerCase();
   let previewResetUrl = null;
+  let emailDeliveryWarning = null;
+  const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+  const strictEmailDelivery =
+    String(process.env.FORGOT_PASSWORD_STRICT_EMAIL || "").toLowerCase() === "true";
+  const includePreviewResetUrl =
+    String(process.env.FORGOT_PASSWORD_INCLUDE_PREVIEW || "").toLowerCase() === "true" || !isProduction;
 
   if (safeEmail && !isValidEmail(safeEmail)) {
     throw httpError(400, "Email khong hop le");
@@ -210,9 +216,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
       const frontendBaseUrl = String(process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
       const resetUrl = `${frontendBaseUrl}/reset-password?token=${token}`;
-      const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
-
-      if (!isProduction) {
+      if (includePreviewResetUrl) {
         previewResetUrl = resetUrl;
       }
 
@@ -220,17 +224,26 @@ const forgotPassword = asyncHandler(async (req, res) => {
         await sendPasswordResetEmail({ to: user.email, resetUrl });
       } catch (emailError) {
         console.error("Failed to send password reset email:", emailError);
-        throw httpError(
-          500,
-          "Khong the gui email dat lai mat khau. Kiem tra EMAIL_USER dung tai khoan Gmail da tao app password, EMAIL_PASS, EMAIL_SERVICE/EMAIL_HOST va bat 2FA."
-        );
+        if (strictEmailDelivery) {
+          throw httpError(
+            500,
+            "Khong the gui email dat lai mat khau. Kiem tra EMAIL_USER dung tai khoan Gmail da tao app password, EMAIL_PASS, EMAIL_SERVICE/EMAIL_HOST va bat 2FA."
+          );
+        }
+
+        emailDeliveryWarning =
+          "Khong gui duoc email dat lai mat khau. Dang tra previewResetUrl de test local.";
       }
     }
   }
 
+  const responseData = {};
+  if (previewResetUrl) responseData.previewResetUrl = previewResetUrl;
+  if (emailDeliveryWarning) responseData.emailDeliveryWarning = emailDeliveryWarning;
+
   res.status(200).json({
     message: "Neu email ton tai, he thong da gui link dat lai mat khau.",
-    data: previewResetUrl ? { previewResetUrl } : null,
+    data: Object.keys(responseData).length > 0 ? responseData : null,
   });
 });
 

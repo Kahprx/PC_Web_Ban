@@ -1,6 +1,8 @@
-﻿import { NavLink, Outlet, useNavigate } from "react-router-dom";
+﻿import { useEffect } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { applyRevealMotion } from "../utils/revealMotion";
 
 import iconAdmin from "../assets/images/PC/ICON/administrator.png";
 import iconDashboard from "../assets/images/PC/ICON/dashboard.png";
@@ -29,8 +31,22 @@ const adminNav = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const routeKey = `${location.pathname}${location.search}`;
+
+  useEffect(() => {
+    let cleanupReveal = () => {};
+    const rafId = window.requestAnimationFrame(() => {
+      cleanupReveal = applyRevealMotion(document);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      cleanupReveal();
+    };
+  }, [location.pathname, location.search]);
 
   return (
     <div className="admin-shell">
@@ -123,8 +139,10 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="admin-page-wrap">
-          <Outlet />
+        <main className="admin-page-wrap motion-route-shell">
+          <div className="motion-route-view" key={routeKey}>
+            <Outlet />
+          </div>
         </main>
       </section>
     </div>

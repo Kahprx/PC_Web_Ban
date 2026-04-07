@@ -7,7 +7,9 @@ const normalizeSecret = (value = "") =>
     .replace(/\s+/g, "");
 
 const extractEmailAddress = (value = "") => {
-  const raw = String(value || "").trim();
+  const raw = String(value || "")
+    .trim()
+    .replace(/^['"]|['"]$/g, "");
   if (!raw) return "";
   const bracketMatch = raw.match(/<([^>]+)>/);
   if (bracketMatch?.[1]) {
@@ -22,8 +24,16 @@ const EMAIL_SERVICE =
   (EMAIL_HOST.toLowerCase().includes("gmail") ? "gmail" : "");
 const EMAIL_PORT = Number(process.env.EMAIL_PORT || 587);
 const EMAIL_SECURE = String(process.env.EMAIL_SECURE || "false").toLowerCase() === "true";
-const EMAIL_USER = extractEmailAddress(process.env.EMAIL_USER || "");
-const EMAIL_PASS = normalizeSecret(process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || "");
+const EMAIL_USER = extractEmailAddress(
+  process.env.EMAIL_USER || process.env.GMAIL_USER || process.env.SMTP_USER || ""
+);
+const EMAIL_PASS = normalizeSecret(
+  process.env.EMAIL_PASS ||
+    process.env.GMAIL_APP_PASSWORD ||
+    process.env.GMAIL_PASS ||
+    process.env.SMTP_PASS ||
+    ""
+);
 const EMAIL_FROM = String(process.env.EMAIL_FROM || EMAIL_USER || "no-reply@pc-store.local").trim();
 
 let transporter;
